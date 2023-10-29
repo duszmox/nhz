@@ -41,16 +41,16 @@ Ez a menüpont ki van húzva, és a képernyő alján hiba üzenetet ír ki megn
 Ha létezik a file, akkor egy sub-menübe kerül a felhasználó ahol öt másik menüpont várja.  
 
   * `Indulási állomás (*kiválasztott állomás* VAGY Nincs még kiválasztott)`  
-  A menüpont kiválasztásakor egy listával találja szembe magát a felhasználó amiben a megállók közül tud válogatni. A megállók ABC sorrendben vannak rendezve. A Fel (⬆️) - Le (⬇️) nyíl gombokkal tud mozogni és az Enterrel választani. Ezen kívül van egy kereső sáv alul, ahova karaktereket beírva tud szűrni a listából. A keresés kis-nagy betű specikus és substringekkel is működik.
+  A menüpont kiválasztásakor egy listával találja szembe magát a felhasználó amiben a megállók közül tud válogatni. A megállók ABC sorrendben vannak rendezve. A Fel (⬆️) - Le (⬇️) nyíl gombokkal tud mozogni és az Enterrel választani. Ezen kívül van egy kereső sáv alul, ahova karaktereket beírva tud szűrni a listából. A keresés nem kis-nagy betű specikus és substringekkel is működik.
 
   * `Célállomás (*kiválasztott állomás* VAGY Nincs még kiválasztott)`  
-  A menüpont kiválasztásakor egy listával találja szembe magát a felhasználó amiben a megállók közül tud válogatni. A megállók ABC sorrendben vannak rendezve. A Fel (⬆️) - Le (⬇️) nyíl gombokkal tud mozogni és az Enterrel választani. Ezen kívül van egy kereső sáv alul, ahova karaktereket beírva tud szűrni a listából. A keresés kis-nagy betű specikus és substringekkel is működik.
+  A menüpont kiválasztásakor egy listával találja szembe magát a felhasználó amiben a megállók közül tud válogatni. A megállók ABC sorrendben vannak rendezve. A Fel (⬆️) - Le (⬇️) nyíl gombokkal tud mozogni és az Enterrel választani. Ezen kívül van egy kereső sáv alul, ahova karaktereket beírva tud szűrni a listából. A keresés nem kis-nagy betű specikus és substringekkel is működik.
 
   * `Indulás időpontja (*megadott időpont* VAGY Nincs még megadva)`  
   A menüpont kiválasztásakor egy input felülettel találja magát szembe a felhasználó, ahol a program bekér tőle egy időpontot HH:MM formátumban. Az időpontokat `int` típusban kéretik beírni. Értelem szerűen 0-23-ig terjedhet a HH és 0-59-ig az MM.
 
   * `Tervezés`  
-  A gombra nyomás hibát ír ki abban az esetben, ha a felette lévő értékek egyike nincs megadva. Ha minden szükséges adat meg van adva, akkor visszaad egy útvonalat amit követve a felhasználó el tud jutni a célállomásához. Ha a megadott időponttól már nem tudja elérni célállomását aznap, akkor ezt közli a felhasználóval.    Egyéb esetben ilyen fomátumban írja ki az útvonaltervet:  
+  A gombra nyomás hibát ír ki abban az esetben, ha a felette lévő értékek egyike nincs megadva. Ha minden szükséges adat meg van adva, akkor visszaad egy útvonalat amit követve a felhasználó el tud jutni a célállomásához. Ha a megadott időponttól már nem tudja elérni célállomását aznap, akkor ezt közli a felhasználóval. Egyéb esetben ilyen fomátumban írja ki az útvonaltervet:  
   **Minta Átszállással**
 
     ```text
@@ -110,7 +110,7 @@ M4,Kelenföld Vasútállomás,Bikás Park,Újbuda-Központ,Móricz Zsigmond Kör
 
 ###  menetrend.csv
 
-Minden sor egy megállót tartalmaz. Az adatok a csv formátumhoz híven vesszővel vannak elválasztva. Minden sor első eleme a járat neve (pl.: M2), a második a vonal végállomásának neve (pl.: Mexikói Út), a harmadik az aktuális megálló neve ahova az indulási időpontok tartoznak (pl.: Oktogon), a további elemek pedig az indulási időpontokat jelzi (pl.: 6:55). **A program feltételezi, hogy a metró szerelvény ugyanabban a percben érkezik be és indul el.** 
+Minden sor egy megállót tartalmaz. Az adatok a csv formátumhoz híven vesszővel vannak elválasztva. Minden sor első eleme a járat neve (pl.: M2), a második a vonal végállomásának neve (pl.: Mexikói Út), a harmadik az aktuális megálló neve ahova az indulási időpontok tartoznak (pl.: Oktogon), a további elemek pedig az indulási időpontokat jelzi (pl.: 6:55). **A program feltételezi, hogy a metró szerelvény ugyanabban a percben érkezik be és indul el.**
 
 ```csv
 M1,Mexikói út,Vörösmarty Tér,1:01,1:06,1:11,1:16,1:21,...,23:46,23:51,23:56
