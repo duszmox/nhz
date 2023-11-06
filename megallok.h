@@ -5,35 +5,35 @@
 
 #include "idopontok.h"
 
-typedef struct Megallo {
+typedef struct MegalloGen {
     char *nev;
-    struct Megallo *kovetkezo;
-    struct Megallo *elozo;
-} Megallo;
+    struct MegalloGen *kovetkezo;
+    struct MegalloGen *elozo;
+} MegalloGen;
 
-typedef struct Vonal {
+typedef struct VonalGen {
     char *nev;
-    Megallo *megallo;
+    MegalloGen *megallo;
     int megallokSzama;
-    struct Vonal *kovetkezo;
-} Vonal;
+    struct VonalGen *kovetkezo;
+} VonalGen;
 
-typedef struct Metro {
-    Vonal *vonalak;
+typedef struct MetroGen {
+    VonalGen *vonalak;
     int vonalakSzama;
-} Metro;
+} MetroGen;
 
-Metro *vonalak_beolvas() {
+MetroGen *vonalak_beolvas() {
     FILE *fp = fopen("megallok.csv", "r");
     if (fp == NULL) {
         printf("Hiba a fajl megnyitasakor!\n");
         exit(1);
     }
 
-    Metro *metro = malloc(sizeof(Metro));
-    *metro = (Metro){NULL, 0};
+    MetroGen *metro = malloc(sizeof(MetroGen));
+    *metro = (MetroGen){NULL, 0};  // struktura inicializalasa
 
-    int buffer_size = sizeof(char);  // Initial buffer size
+    int buffer_size = sizeof(char);  // egy karakter biztos van a fileban
     char *buffer = malloc(buffer_size);
     int buffer_index = 0;
 
@@ -47,20 +47,20 @@ Metro *vonalak_beolvas() {
             buffer[buffer_index] = '\0';  // Null-terminate the line
             buffer_index = 0;
 
-            Vonal vonal = {NULL, NULL, 0, NULL};
+            VonalGen vonal = {NULL, NULL, 0, NULL};
             vonal.nev = strdup(strtok(buffer, ","));
             char *token = strtok(NULL, ",");
             while (token != NULL) {
                 if (vonal.megallokSzama == 0) {
-                    vonal.megallo = malloc(sizeof(Megallo));
+                    vonal.megallo = malloc(sizeof(MegalloGen));
                     vonal.megallo->nev = strdup(token);
                     vonal.megallo->kovetkezo = NULL;
                     vonal.megallo->elozo = NULL;
                 } else {
-                    Megallo *uj = malloc(sizeof(Megallo));
+                    MegalloGen *uj = malloc(sizeof(MegalloGen));
                     uj->nev = strdup(token);
                     uj->kovetkezo = NULL;
-                    Megallo *mozgo = vonal.megallo;
+                    MegalloGen *mozgo = vonal.megallo;
                     while (mozgo->kovetkezo != NULL) {
                         mozgo = mozgo->kovetkezo;
                     }
@@ -71,15 +71,15 @@ Metro *vonalak_beolvas() {
                 vonal.megallokSzama++;
             }
             if (metro->vonalak == NULL) {
-                metro->vonalak = malloc(sizeof(Vonal));
+                metro->vonalak = malloc(sizeof(VonalGen));
                 *metro->vonalak = vonal;
                 metro->vonalak->kovetkezo = NULL;
                 metro->vonalakSzama++;
             } else {
-                Vonal *uj = malloc(sizeof(Vonal));
+                VonalGen *uj = malloc(sizeof(VonalGen));
                 *uj = vonal;
                 uj->kovetkezo = NULL;
-                Vonal *mozgo = metro->vonalak;
+                VonalGen *mozgo = metro->vonalak;
                 while (mozgo->kovetkezo != NULL) {
                     mozgo = mozgo->kovetkezo;
                 }
@@ -100,24 +100,24 @@ Metro *vonalak_beolvas() {
     fclose(fp);
     return metro;
 }
-// return the first Megallo of the Vonal
-Megallo *elso_megallo(Vonal vonal) {
-    Megallo *megallo = vonal.megallo;
+// return the first MegalloGen of the VonalGen
+MegalloGen *elso_megallo(VonalGen vonal) {
+    MegalloGen *megallo = vonal.megallo;
     while (megallo->elozo != NULL) {
         megallo = megallo->elozo;
     }
     return megallo;
 }
 
-Megallo *utolso_megallo(Vonal vonal) {
-    Megallo *megallo = vonal.megallo;
+MegalloGen *utolso_megallo(VonalGen vonal) {
+    MegalloGen *megallo = vonal.megallo;
     while (megallo->kovetkezo != NULL) {
         megallo = megallo->kovetkezo;
     }
     return megallo;
 }
 
-void gen_menetrend(Metro metro) {
+void gen_menetrend(MetroGen metro) {
     time_t t;
     srand((unsigned)time(&t));
     FILE *fp = fopen("menetrend.csv", "w");
@@ -125,7 +125,7 @@ void gen_menetrend(Metro metro) {
         printf("Hiba a fajl megnyitasakor!\n");
         exit(1);
     }
-    Vonal *vonal = metro.vonalak;
+    VonalGen *vonal = metro.vonalak;
     while (vonal != NULL) {
         Idopont elso_indulas = (Idopont){0, rand() % 5};
         int indulasi_intervallum = 3;
@@ -133,11 +133,10 @@ void gen_menetrend(Metro metro) {
         int utolso_indulas_int =
             24 * 60 - megallo_tavolsag * vonal->megallokSzama - 1;
         int indulasok_szama = utolso_indulas_int / indulasi_intervallum;
-        printf("%d\n", indulasok_szama);
-        printf("\n");
-        Megallo *elso = elso_megallo(*vonal);
-        Megallo *utolso = utolso_megallo(*vonal);
-        Megallo *megallo = elso;
+
+        MegalloGen *elso = elso_megallo(*vonal);
+        MegalloGen *utolso = utolso_megallo(*vonal);
+        MegalloGen *megallo = elso;
         int megallo_tav = 0;
         while (megallo != NULL) {
             fprintf(fp, "%s,%s,%s,", vonal->nev, utolso->nev, megallo->nev);
@@ -156,6 +155,7 @@ void gen_menetrend(Metro metro) {
             megallo_tav++;
         }
         fprintf(fp, "\n");
+
         megallo = utolso;
         megallo_tav = 0;
         while (megallo != NULL) {
@@ -180,18 +180,53 @@ void gen_menetrend(Metro metro) {
     fclose(fp);
 }
 
-void free_metro(Metro *metro) {
-    Vonal *vonal = metro->vonalak;
+void free_metro(MetroGen *metro) {
+    VonalGen *vonal = metro->vonalak;
     while (vonal != NULL) {
-        Megallo *megallo = vonal->megallo;
+        MegalloGen *megallo = vonal->megallo;
         while (megallo != NULL) {
-            Megallo *kov = megallo->kovetkezo;
+            MegalloGen *kov = megallo->kovetkezo;
             free(megallo);
             megallo = kov;
         }
-        Vonal *kov = vonal->kovetkezo;
+        VonalGen *kov = vonal->kovetkezo;
         free(vonal);
         vonal = kov;
     }
     free(metro);
+}
+
+bool rajta_van_vonalon(VonalGen vonal, MegalloGen megallo) {
+    MegalloGen *mozgo = vonal.megallo;
+    while (mozgo != NULL) {
+        if (strcmp(mozgo->nev, megallo.nev) == 0) {
+            return true;
+        }
+        mozgo = mozgo->kovetkezo;
+    }
+    return false;
+}
+bool megallo_tav(MegalloGen megallo1, MegalloGen megallo2, int *tav) {
+    *tav = 0;
+    MegalloGen *mozgo = &megallo1;
+    while (mozgo != NULL) {
+        if (strcmp(mozgo->nev, megallo2.nev) == 0) {
+            return true;
+        }
+        mozgo = mozgo->kovetkezo;
+        tav++;
+    }
+    *mozgo = megallo1;
+    while (mozgo != NULL) {
+        if (strcmp(mozgo->nev, megallo2.nev) == 0) {
+            return true;
+        }
+        mozgo = mozgo->elozo;
+        tav--;
+    }
+    return false;
+}
+void del_menetrend() {
+    // delete menetrend.csv
+    remove("menetrend.csv");
 }
