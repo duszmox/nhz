@@ -12,6 +12,7 @@
 #endif
 
 #include "megallok.h"
+#include "utvonalterv.h"
 
 typedef struct MenuItem {
     char *text;

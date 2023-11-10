@@ -1,4 +1,3 @@
-
 typedef struct Idopont {
     int ora;
     int perc;

@@ -1,10 +1,12 @@
+#ifndef HEADER_FILE
+#define HEADER_FILE
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 
 #include "idopontok.h"
-
+#endif
 typedef struct MegalloGen {
     char *nev;
     struct MegalloGen *kovetkezo;
@@ -130,8 +132,9 @@ void gen_menetrend(MetroGen metro) {
         Idopont elso_indulas = (Idopont){0, rand() % 5};
         int indulasi_intervallum = 3;
         int megallo_tavolsag = 2;
-        int utolso_indulas_int =
-            24 * 60 - megallo_tavolsag * vonal->megallokSzama - 1;
+        int utolso_indulas_int = 24 * 60 -
+                                 megallo_tavolsag * vonal->megallokSzama -
+                                 elso_indulas.perc;
         int indulasok_szama = utolso_indulas_int / indulasi_intervallum;
 
         MegalloGen *elso = elso_megallo(*vonal);
@@ -147,7 +150,11 @@ void gen_menetrend(MetroGen metro) {
                 indulas = idopont_osszead(indulas,
                                           (Idopont){0, indulasi_intervallum});
                 char *bovitett_perc = bovit_nullaval(indulas, PERC);
-                fprintf(fp, "%d:%s,", indulas.ora, bovitett_perc);
+                if (i == indulasok_szama - 1) {
+                    fprintf(fp, "%d:%s", indulas.ora, bovitett_perc);
+                } else {
+                    fprintf(fp, "%d:%s,", indulas.ora, bovitett_perc);
+                }
                 free(bovitett_perc);
             }
             fprintf(fp, "\n");
@@ -167,7 +174,11 @@ void gen_menetrend(MetroGen metro) {
                 indulas = idopont_osszead(indulas,
                                           (Idopont){0, indulasi_intervallum});
                 char *bovitett_perc = bovit_nullaval(indulas, PERC);
-                fprintf(fp, "%d:%s,", indulas.ora, bovitett_perc);
+                if (i == indulasok_szama - 1) {
+                    fprintf(fp, "%d:%s", indulas.ora, bovitett_perc);
+                } else {
+                    fprintf(fp, "%d:%s,", indulas.ora, bovitett_perc);
+                }
                 free(bovitett_perc);
             }
             fprintf(fp, "\n");
@@ -196,36 +207,6 @@ void free_metro(MetroGen *metro) {
     free(metro);
 }
 
-bool rajta_van_vonalon(VonalGen vonal, MegalloGen megallo) {
-    MegalloGen *mozgo = vonal.megallo;
-    while (mozgo != NULL) {
-        if (strcmp(mozgo->nev, megallo.nev) == 0) {
-            return true;
-        }
-        mozgo = mozgo->kovetkezo;
-    }
-    return false;
-}
-bool megallo_tav(MegalloGen megallo1, MegalloGen megallo2, int *tav) {
-    *tav = 0;
-    MegalloGen *mozgo = &megallo1;
-    while (mozgo != NULL) {
-        if (strcmp(mozgo->nev, megallo2.nev) == 0) {
-            return true;
-        }
-        mozgo = mozgo->kovetkezo;
-        tav++;
-    }
-    *mozgo = megallo1;
-    while (mozgo != NULL) {
-        if (strcmp(mozgo->nev, megallo2.nev) == 0) {
-            return true;
-        }
-        mozgo = mozgo->elozo;
-        tav--;
-    }
-    return false;
-}
 void del_menetrend() {
     // delete menetrend.csv
     remove("menetrend.csv");
