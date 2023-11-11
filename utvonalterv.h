@@ -153,3 +153,82 @@ Metro *menetrend_beolvas() {
     fclose(fp);
     return metro;
 }
+
+bool is_on_vonal(Vonal *vonal, char *megallo) {
+    Megallo *mozgo = vonal->megallo;
+    while (mozgo != NULL) {
+        if (strcmp(mozgo->nev, megallo) == 0) {
+            return true;
+        }
+        mozgo = mozgo->kovetkezo;
+    }
+    return false;
+}
+int *megallo_distance(Vonal *vonal, char *megallo1, char *megallo2) {
+    if (!is_on_vonal(vonal, megallo1) || !is_on_vonal(vonal, megallo2)) {
+        return NULL;
+    }
+    int tav = 0;
+    Megallo *mozgo = vonal->megallo;
+    while (mozgo != NULL) {
+        if (strcmp(mozgo->nev, megallo1) == 0) {
+            break;
+        }
+        tav++;
+        mozgo = mozgo->kovetkezo;
+    }
+    int tav2 = 0;
+    mozgo = vonal->megallo;
+    while (mozgo != NULL) {
+        if (strcmp(mozgo->nev, megallo2) == 0) {
+            break;
+        }
+        tav2++;
+        mozgo = mozgo->kovetkezo;
+    }
+    int *distance = malloc(sizeof(int));
+    *distance = tav2 - tav;
+    return distance;
+}
+Megallo *megallo_search(Metro *metro, char *megallo_chunk) {
+    //    return all megallok where megallonev contains megallonev_chunk, it's
+    //    not case sensitive
+    int megallokSzama = 0;
+    Megallo *megallok = malloc(sizeof(Megallo));
+    *megallok = (Megallo){NULL, NULL, NULL, NULL, NULL, 0, 0};
+    Vonal *mozgo = metro->vonalak;
+    while (mozgo != NULL) {
+        Megallo *mozgo2 = mozgo->megallo;
+        while (mozgo2 != NULL) {
+            if (strstr(mozgo2->nev, megallo_chunk) != NULL) {
+                Megallo **tmp = &megallok;
+                megallokSzama++;
+                megallok = realloc(megallok, sizeof(Megallo) * megallokSzama);
+                megallok[megallokSzama - 1] = *mozgo2;
+                megallok[megallokSzama - 1].kovetkezo = NULL;
+                megallok[megallokSzama - 1].elozo = *tmp;
+                if (megallok[megallokSzama - 1].elozo != NULL) {
+                    megallok[megallokSzama - 1].elozo->kovetkezo =
+                        &megallok[megallokSzama - 1];
+                }
+            }
+            mozgo2 = mozgo2->kovetkezo;
+        }
+        mozgo = mozgo->kovetkezo;
+    }
+    return megallok;
+}
+Vonal *find_vonal_for_megallo(Metro *metro, Megallo *megallo) {
+    Vonal *mozgo = metro->vonalak;
+    while (mozgo != NULL) {
+        Megallo *mozgo2 = mozgo->megallo;
+        while (mozgo2 != NULL) {
+            if (strcmp(mozgo2->nev, megallo->nev) == 0) {
+                return mozgo;
+            }
+            mozgo2 = mozgo2->kovetkezo;
+        }
+        mozgo = mozgo->kovetkezo;
+    }
+    return NULL;
+}

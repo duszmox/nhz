@@ -50,3 +50,13 @@ char *bovit_nullaval(Idopont idopont, idopont_tipus it) {
     }
     return s;
 }
+
+char *idopont_to_string(Idopont idopont) {
+    char *ora = bovit_nullaval(idopont, ORA);
+    char *perc = bovit_nullaval(idopont, PERC);
+    char *s = (char *)malloc(5 * sizeof(char) + 1);
+    sprintf(s, "%s:%s", ora, perc);
+    free(ora);
+    free(perc);
+    return s;
+}
