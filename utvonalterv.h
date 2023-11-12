@@ -216,6 +216,23 @@ Megallo *megallo_search(Metro *metro, char *megallo_chunk) {
         }
         mozgo = mozgo->kovetkezo;
     }
+    if (megallokSzama == 0) {
+        // return all megallok
+        Megallo *mozgo = metro->vonalak->megallo;
+        while (mozgo != NULL) {
+            Megallo **tmp = &megallok;
+            megallokSzama++;
+            megallok = realloc(megallok, sizeof(Megallo) * megallokSzama);
+            megallok[megallokSzama - 1] = *mozgo;
+            megallok[megallokSzama - 1].kovetkezo = NULL;
+            megallok[megallokSzama - 1].elozo = *tmp;
+            if (megallok[megallokSzama - 1].elozo != NULL) {
+                megallok[megallokSzama - 1].elozo->kovetkezo =
+                    &megallok[megallokSzama - 1];
+            }
+            mozgo = mozgo->kovetkezo;
+        }
+    }
     return megallok;
 }
 Vonal *find_vonal_for_megallo(Metro *metro, Megallo *megallo) {
@@ -231,4 +248,26 @@ Vonal *find_vonal_for_megallo(Metro *metro, Megallo *megallo) {
         mozgo = mozgo->kovetkezo;
     }
     return NULL;
+}
+void sort_megallo_array(Megallo *megallok) {
+    int i, j;
+    Megallo temp;
+    for (i = 0; i < sizeof(megallok) - 1; i++) {
+        for (j = 0; j < sizeof(megallok) - i - 1; j++) {
+            if (strcmp(megallok[j].nev, megallok[j + 1].nev) > 0) {
+                temp = megallok[j];
+                megallok[j] = megallok[j + 1];
+                megallok[j + 1] = temp;
+            }
+        }
+    }
+}
+int count_megallok(Megallo *megallok) {
+    int count = 0;
+    Megallo *mozgo = megallok;
+    while (mozgo != NULL) {
+        count++;
+        mozgo = mozgo->kovetkezo;
+    }
+    return count;
 }

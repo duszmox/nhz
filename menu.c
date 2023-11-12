@@ -18,7 +18,8 @@ enum menus {
     MAIN_MENU,
     MENETREND_MENU1,
     MENETREND_MENU2,
-    UTVALTERV_MENU
+    UTVALTERV_MENU,
+    MEGALLO_SELECTOR
 } typedef menu_type;
 
 typedef struct MenuItem {
@@ -41,6 +42,15 @@ typedef struct Utvonalterv {
     int atszallasokSzama;
     struct Utvonalterv *kovetkezo;
 } Utvonalterv;
+typedef struct MegalloList {
+    Megallo *megallo;
+    int size;
+} MegalloList;
+
+typedef struct SearchKey {
+    char *key;
+    int size;
+} SearchKey;
 
 void gen_m();
 
@@ -101,6 +111,24 @@ Menu *gen_utvonalmenu(Utvonalterv *utvonalterv, Menu *parent) {
     return utvonalterv_menu;
 }
 
+Menu *gen_megallo_selector_menu(Metro *metro, Menu *parent, char *searchKey) {
+    Megallo *megallok = megallo_search(metro, searchKey);
+    sort_megallo_array(megallok);
+    MegalloList *megalloList = malloc(sizeof(MegalloList));
+    megalloList->megallo = megallok;
+    megalloList->size = count_megallok(megallok);
+    Menu *megallo_selector_menu = malloc(sizeof(Menu));
+    megallo_selector_menu->items = malloc(sizeof(MenuItem) * 4);
+    megallo_selector_menu->parent = parent;
+    megallo_selector_menu->size = 4;
+    megallo_selector_menu->selected = 0;
+    megallo_selector_menu->accepts_input = true;
+    megallo_selector_menu->type = MEGALLO_SELECTOR;
+    // set the items to the 4 megallos closest to the selected one
+
+    return megallo_selector_menu;
+}
+
 int main() {
     init_ncurses();
     Menu *current_menu;
@@ -133,6 +161,8 @@ int main() {
         NULL, NULL, NULL, NULL, 0, NULL,
     };
     bool utvonalterv_alloced = false;
+    Metro *metro = {NULL, 0};
+    SearchKey searchKey = {NULL, 0};
     while (1) {
         if (access("menetrend.csv", F_OK) == 0) {
             if (utvonalterv_alloced) {
@@ -188,12 +218,32 @@ int main() {
                 attroff(A_REVERSE);
             }
         }
+        if (current_menu->accepts_input) {
+            mvprintw(current_menu->size + 2, 0, "Keresés: %s", searchKey.key);
+        }
 
         ch = getch();
         if (ch == KEY_UP) {
-            decrease_selected(&selected, current_menu->size + 1);
+            if (current_menu->type == MEGALLO_SELECTOR) {
+                if (current_menu->selected != 0) {
+                    current_menu->selected--;
+                } else {
+                    decrease_selected(&selected, current_menu->size + 1);
+                }
+            } else {
+                decrease_selected(&selected, current_menu->size + 1);
+            }
         } else if (ch == KEY_DOWN) {
-            increase_selected(&selected, current_menu->size + 1);
+            if (current_menu->type == MEGALLO_SELECTOR) {
+                if (current_menu->selected !=
+                    count_megallok(megallo_search(metro, searchKey.key))) {
+                    current_menu->selected++;
+                } else {
+                    increase_selected(&selected, current_menu->size + 1);
+                }
+            } else {
+                increase_selected(&selected, current_menu->size + 1);
+            }
         } else if (ch == 'q') {
             break;
         } else if (ch == '\n') {
@@ -225,14 +275,40 @@ int main() {
                 } else if (current_menu->type == MENETREND_MENU2) {
                     if (selected == 0) {
                         remove("menetrend.csv");
+                        *metro = (Metro){NULL, 0};
                     }
                     if (selected == 1) {
                         gen_m();
                     }
                 } else if (current_menu->type == UTVALTERV_MENU) {
                     if (selected == 0) {
+                        metro = menetrend_beolvas();
+                        searchKey.key = malloc(sizeof(char));
+                        searchKey.size = 0;
+                        current_menu = gen_megallo_selector_menu(
+                            metro, current_menu, searchKey.key);
+                    }
+                } else if (current_menu->type == MEGALLO_SELECTOR) {
+                    if (selected == 0) {
                     }
                 }
+            }
+        } else if (current_menu->accepts_input) {
+            if (ch == KEY_BACKSPACE || ch == KEY_DC || ch == 127) {
+                if (searchKey.size > 0) {
+                    searchKey.key = realloc(
+                        searchKey.key, sizeof(char) * strlen(searchKey.key) -
+                                           sizeof(char) + 1);
+                    searchKey.key[strlen(searchKey.key) - 1] = '\0';
+                    searchKey.size--;
+                }
+            } else {
+                searchKey.key = realloc(
+                    searchKey.key,
+                    sizeof(char) * strlen(searchKey.key) + sizeof(char) + 1);
+                searchKey.key[strlen(searchKey.key)] = ch;
+                searchKey.key[strlen(searchKey.key) + 1] = '\0';
+                searchKey.size++;
             }
         }
         // clear the screen
