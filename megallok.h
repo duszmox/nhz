@@ -46,7 +46,7 @@ MetroGen *vonalak_beolvas() {
                 buffer_size += sizeof(ch);
                 buffer = realloc(buffer, buffer_size);
             }
-            buffer[buffer_index] = '\0';  // Null-terminate the line
+            buffer[buffer_index] = '\0';
             buffer_index = 0;
 
             VonalGen vonal = {NULL, NULL, 0, NULL};
@@ -207,7 +207,4 @@ void free_metro(MetroGen *metro) {
     free(metro);
 }
 
-void del_menetrend() {
-    // delete menetrend.csv
-    remove("menetrend.csv");
-}
+void del_menetrend() { remove("menetrend.csv"); }

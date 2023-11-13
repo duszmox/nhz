@@ -1,6 +1,8 @@
 
 #ifndef HEADER_FILE
 #define HEADER_FILE
+#include <ctype.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -31,7 +33,10 @@ typedef struct Metro {
     Vonal *vonalak;
     int vonalakSzama;
 } Metro;
-
+typedef struct MegalloList {
+    Megallo *megallo;
+    int size;
+} MegalloList;
 Metro *menetrend_beolvas() {
     FILE *fp = fopen("menetrend.csv", "r");
     if (fp == NULL) {
@@ -107,7 +112,8 @@ Metro *menetrend_beolvas() {
                 strtok(NULL, ",");
                 // printf("%s\n", asd);
                 char *megalloNev = strtok(NULL, ",");
-                megallo->nev = malloc(sizeof(char) * buffer_size);
+                printf("%s\n", megalloNev);
+                megallo->nev = malloc(sizeof(char) * strlen(megalloNev) + 1);
                 strcpy(megallo->nev, megalloNev);
                 // printf("%s\n", megallo->nev);
                 megallo->ido1 = ido;
@@ -138,7 +144,6 @@ Metro *menetrend_beolvas() {
             }
         } else {
             if (buffer_index == buffer_size) {
-                // Resize the buffer if necessary
                 buffer_size += sizeof(ch);
                 buffer = realloc(buffer, buffer_size);
             }
@@ -190,50 +195,62 @@ int *megallo_distance(Vonal *vonal, char *megallo1, char *megallo2) {
     *distance = tav2 - tav;
     return distance;
 }
-Megallo *megallo_search(Metro *metro, char *megallo_chunk) {
-    //    return all megallok where megallonev contains megallonev_chunk, it's
-    //    not case sensitive
+MegalloList *megallo_search(Metro *metro, char *megallo_chunk) {
     int megallokSzama = 0;
     Megallo *megallok = malloc(sizeof(Megallo));
     *megallok = (Megallo){NULL, NULL, NULL, NULL, NULL, 0, 0};
-    Vonal *mozgo = metro->vonalak;
-    while (mozgo != NULL) {
-        Megallo *mozgo2 = mozgo->megallo;
-        while (mozgo2 != NULL) {
-            if (strstr(mozgo2->nev, megallo_chunk) != NULL) {
-                Megallo **tmp = &megallok;
-                megallokSzama++;
-                megallok = realloc(megallok, sizeof(Megallo) * megallokSzama);
-                megallok[megallokSzama - 1] = *mozgo2;
-                megallok[megallokSzama - 1].kovetkezo = NULL;
-                megallok[megallokSzama - 1].elozo = *tmp;
-                if (megallok[megallokSzama - 1].elozo != NULL) {
-                    megallok[megallokSzama - 1].elozo->kovetkezo =
-                        &megallok[megallokSzama - 1];
+    Vonal *vonal = metro->vonalak;
+
+    while (vonal != NULL) {
+        Megallo *mozgo = vonal->megallo;
+        while (mozgo != NULL) {
+            Megallo *mozgo2 = megallok;
+            if (megallokSzama != 0) {
+                while (mozgo2 != NULL) {
+                    if (strcmp(mozgo2->nev, mozgo->nev) == 0) {
+                        break;
+                    }
+                    mozgo2 = mozgo2->kovetkezo;
+                }
+                if (mozgo2 != NULL) {
+                    mozgo = mozgo->kovetkezo;
+                    continue;
                 }
             }
-            mozgo2 = mozgo2->kovetkezo;
-        }
-        mozgo = mozgo->kovetkezo;
-    }
-    if (megallokSzama == 0) {
-        // return all megallok
-        Megallo *mozgo = metro->vonalak->megallo;
-        while (mozgo != NULL) {
-            Megallo **tmp = &megallok;
-            megallokSzama++;
-            megallok = realloc(megallok, sizeof(Megallo) * megallokSzama);
-            megallok[megallokSzama - 1] = *mozgo;
-            megallok[megallokSzama - 1].kovetkezo = NULL;
-            megallok[megallokSzama - 1].elozo = *tmp;
-            if (megallok[megallokSzama - 1].elozo != NULL) {
-                megallok[megallokSzama - 1].elozo->kovetkezo =
-                    &megallok[megallokSzama - 1];
+
+            if (strcasestr(mozgo->nev, megallo_chunk) != NULL ||
+                strcmp(megallo_chunk, "") == 0) {
+                Megallo *uj = malloc(sizeof(Megallo));
+                *uj = (Megallo){NULL, NULL, NULL, NULL, NULL, 0, 0};
+                uj->nev = malloc(sizeof(char) * strlen(mozgo->nev) + 1);
+                strcpy(uj->nev, mozgo->nev);
+                uj->ido1 = mozgo->ido1;
+                uj->ido2 = mozgo->ido2;
+                uj->ido1Hossz = mozgo->ido1Hossz;
+                uj->ido2Hossz = mozgo->ido2Hossz;
+                uj->kovetkezo = NULL;
+                uj->elozo = NULL;
+                if (megallokSzama == 0) {
+                    *megallok = *uj;
+                } else {
+                    Megallo *mozgo2 = megallok;
+                    while (mozgo2->kovetkezo != NULL)
+                        mozgo2 = mozgo2->kovetkezo;
+                    mozgo2->kovetkezo = uj;
+                    uj->elozo = mozgo2;
+                }
+                megallokSzama++;
             }
             mozgo = mozgo->kovetkezo;
         }
+        vonal = vonal->kovetkezo;
     }
-    return megallok;
+
+    MegalloList *megalloList = malloc(sizeof(MegalloList));
+    *megalloList = (MegalloList){NULL, 0};
+    megalloList->megallo = megallok;
+    megalloList->size = megallokSzama;
+    return megalloList;
 }
 Vonal *find_vonal_for_megallo(Metro *metro, Megallo *megallo) {
     Vonal *mozgo = metro->vonalak;
@@ -250,7 +267,7 @@ Vonal *find_vonal_for_megallo(Metro *metro, Megallo *megallo) {
     return NULL;
 }
 void sort_megallo_array(Megallo *megallok) {
-    int i, j;
+    unsigned long i, j;
     Megallo temp;
     for (i = 0; i < sizeof(megallok) - 1; i++) {
         for (j = 0; j < sizeof(megallok) - i - 1; j++) {
