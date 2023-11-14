@@ -267,17 +267,29 @@ Vonal *find_vonal_for_megallo(Metro *metro, Megallo *megallo) {
     return NULL;
 }
 void sort_megallo_array(Megallo *megallok) {
-    unsigned long i, j;
-    Megallo temp;
-    for (i = 0; i < sizeof(megallok) - 1; i++) {
-        for (j = 0; j < sizeof(megallok) - i - 1; j++) {
-            if (strcmp(megallok[j].nev, megallok[j + 1].nev) > 0) {
-                temp = megallok[j];
-                megallok[j] = megallok[j + 1];
-                megallok[j + 1] = temp;
+    int swapped;
+    struct Megallo *ptr1;
+    struct Megallo *lptr = NULL;
+
+    /* Checking for empty list */
+    if (megallok == NULL) return;
+
+    do {
+        swapped = 0;
+        ptr1 = megallok;
+
+        while (ptr1->kovetkezo != lptr) {
+            if (strcmp(ptr1->nev, ptr1->kovetkezo->nev) > 0) {
+                // Swap data of two nodes
+                char *temp = ptr1->nev;
+                ptr1->nev = ptr1->kovetkezo->nev;
+                ptr1->kovetkezo->nev = temp;
+                swapped = 1;
             }
+            ptr1 = ptr1->kovetkezo;
         }
-    }
+        lptr = ptr1;
+    } while (swapped);
 }
 int count_megallok(Megallo *megallok) {
     int count = 0;

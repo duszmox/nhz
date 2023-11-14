@@ -22,6 +22,8 @@ enum menus {
     MEGALLO_SELECTOR
 } typedef menu_type;
 
+enum selector_type { INDULO, CEL } typedef selector_type;
+
 typedef struct MenuItem {
     char *text;
 } MenuItem;
@@ -111,7 +113,7 @@ Menu *gen_megallo_selector_menu(Metro *metro, Menu *parent, char *searchKey,
                                 int megalloSelectorIdx) {
     MegalloList *megallok = malloc(sizeof(MegalloList));
     *megallok = *megallo_search(metro, searchKey);
-    // sort_megallo_array(megallok->megallo);
+    sort_megallo_array(megallok->megallo);
     Menu *megallo_selector_menu = malloc(sizeof(Menu));
     megallo_selector_menu->items = malloc(sizeof(MenuItem) * 4);
     megallo_selector_menu->parent = parent;
@@ -201,6 +203,7 @@ int main() {
     Metro *metro = NULL;
     SearchKey searchKey = {NULL, 0};
     int megalloSelectorIdx = 0;
+    selector_type selectorType;
     while (1) {
         if (access("menetrend.csv", F_OK) == 0) {
             if (utvonalterv_alloced) {
@@ -221,7 +224,7 @@ int main() {
             strcpy(main_menu.items[1].text, "Ú̶t̶v̶o̶n̶a̶l̶t̶e̶r̶v̶e̶z̶é̶s̶");
             utvonalterv_alloced = true;
         }
-        mvprintw(0, 0, "Selected: %d", megalloSelectorIdx);
+        mvprintw(0, 0, "Selected: %d %d", megalloSelectorIdx, selected);
         if (current_menu == &menetrend_menu1_no_menetrend &&
             access("menetrend.csv", F_OK) == 0) {
             current_menu = &menetrend_menu1_menetrend;
@@ -322,11 +325,12 @@ int main() {
         } else if (ch == '\n') {
             if (selected == current_menu->size) {
                 if (current_menu->parent != NULL) {
-                    current_menu = current_menu->parent;
-                    selected = 0;
                     if (current_menu->type == MEGALLO_SELECTOR) {
                         megalloSelectorIdx = 0;
                     }
+                    current_menu = current_menu->parent;
+                    selected = 0;
+                    selectorType = NULL;
                 } else {
                     break;
                 }
@@ -341,6 +345,7 @@ int main() {
                             current_menu =
                                 gen_utvonalmenu(&utvonalterv, &main_menu);
                             selected = 0;
+                            metro = menetrend_beolvas();
                         }
                     }
 
@@ -358,17 +363,53 @@ int main() {
                     }
                 } else if (current_menu->type == UTVALTERV_MENU) {
                     if (selected == 0) {
-                        metro = menetrend_beolvas();
                         searchKey.key = malloc(sizeof(char));
                         searchKey.size = 0;
                         megalloSelectorIdx = 0;
                         current_menu = gen_megallo_selector_menu(
                             metro, current_menu, searchKey.key,
                             megalloSelectorIdx);
+                        selectorType = INDULO;
+                        selected = 0;
                     }
+                    if (selected == 1) {
+                        searchKey.key = malloc(sizeof(char));
+                        searchKey.size = 0;
+                        megalloSelectorIdx = 0;
+                        current_menu = gen_megallo_selector_menu(
+                            metro, current_menu, searchKey.key,
+                            megalloSelectorIdx);
+                        selectorType = CEL;
+                        selected = 0;
+                    }
+
                 } else if (current_menu->type == MEGALLO_SELECTOR) {
-                    if (selected == 0) {
+                    Megallo *megallo =
+                        megallo_search(metro, searchKey.key)->megallo;
+                    sort_megallo_array(megallo);
+                    int i = 0;
+                    while (megallo != NULL && current_menu->size < 4
+                               ? i < megalloSelectorIdx
+                               : i < megalloSelectorIdx + selected) {
+                        megallo = megallo->kovetkezo;
+                        i++;
                     }
+                    switch (selectorType) {
+                        case INDULO:
+                            utvonalterv.indulo = megallo;
+                            break;
+                        case CEL:
+                            utvonalterv.cel = megallo;
+                            break;
+
+                        default:
+                            break;
+                    }
+                    selected = 0;
+                    megalloSelectorIdx = 0;
+                    current_menu = gen_utvonalmenu(
+                        &utvonalterv, current_menu->parent->parent);
+                    selectorType = NULL;
                 }
             }
         } else if (current_menu->accepts_input) {
