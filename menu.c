@@ -11,6 +11,7 @@
 #define access _access
 #endif
 
+// #include "debugmalloc.h"
 #include "megallok.h"
 #include "utvonalterv.h"
 
@@ -53,6 +54,10 @@ typedef struct AString {
 
 void gen_m();
 
+void allocate_string(char **str, char const *text) {
+    *str = malloc(sizeof(char) * strlen(text) + 1);
+    strcpy(*str, text);
+}
 void increase_selected(int *selected, int size) {
     *selected = (*selected + 1) % size;
 }
@@ -86,15 +91,13 @@ Menu *gen_utvonalmenu(Utvonalterv *utvonalterv, Menu *parent) {
     char *indulo =
         malloc(sizeof(char) * strlen(induloMegallo) + 1 + strlen("Induló: ()"));
     sprintf(indulo, "Induló: (%s)", induloMegallo);
-    utvonalterv_menu->items[0].text = malloc(sizeof(char) * strlen(indulo) + 1);
-    strcpy(utvonalterv_menu->items[0].text, indulo);
+    allocate_string(&utvonalterv_menu->items[0].text, indulo);
     char *celMegallo =
         utvonalterv->cel == NULL ? "Nincs megadva" : utvonalterv->cel->nev;
     char *cel =
         malloc(sizeof(char) * strlen(celMegallo) + 1 + strlen("Cél: ()"));
     sprintf(cel, "Cél: (%s)", celMegallo);
-    utvonalterv_menu->items[1].text = malloc(sizeof(char) * strlen(cel) + 1);
-    strcpy(utvonalterv_menu->items[1].text, cel);
+    allocate_string(&utvonalterv_menu->items[1].text, cel);
     char *indulasiIdo = utvonalterv->indulasiIdo == NULL
                             ? "Nincs megadva"
                             : idopont_to_string(*utvonalterv->indulasiIdo);
@@ -102,13 +105,8 @@ Menu *gen_utvonalmenu(Utvonalterv *utvonalterv, Menu *parent) {
     char *indulasiIdoText = malloc(sizeof(char) * strlen(indulasiIdo) + 1 +
                                    strlen("Indulási idő: ()"));
     sprintf(indulasiIdoText, "Indulási idő: (%s)", indulasiIdo);
-    utvonalterv_menu->items[2].text =
-        malloc(sizeof(char) * strlen(indulasiIdoText) + 1);
-    strcpy(utvonalterv_menu->items[2].text, indulasiIdoText);
-    char *tervezes = "Tervezés";
-    utvonalterv_menu->items[3].text =
-        malloc(sizeof(char) * strlen(tervezes) + 1);
-    strcpy(utvonalterv_menu->items[3].text, tervezes);
+    allocate_string(&utvonalterv_menu->items[2].text, indulasiIdoText);
+    allocate_string(&utvonalterv_menu->items[3].text, "Tervezés");
     return utvonalterv_menu;
 }
 
@@ -126,16 +124,9 @@ Menu *gen_megallo_selector_menu(Metro *metro, Menu *parent, char *searchKey,
     megallo_selector_menu->accepts_input = true;
     megallo_selector_menu->type = MEGALLO_SELECTOR;
     if (megallok->size == 0) {
-        megallo_selector_menu->items[0].text =
-            malloc(sizeof(char) * strlen("Nincs találat") + 1);
-        strcpy(megallo_selector_menu->items[0].text, "Nincs találat");
-        megallo_selector_menu->items[1].text = malloc(sizeof(char));
-        megallo_selector_menu->items[1].text[0] = '\0';
-        megallo_selector_menu->items[2].text = malloc(sizeof(char));
-        megallo_selector_menu->items[2].text[0] = '\0';
-        megallo_selector_menu->items[3].text = malloc(sizeof(char));
-        megallo_selector_menu->items[3].text[0] = '\0';
-
+        allocate_string(&megallo_selector_menu->items[0].text, "Nincs találat");
+        for (int i = 1; i <= 3; i++)
+            allocate_string(&megallo_selector_menu->items[i].text, "");
         return megallo_selector_menu;
     } else {
         Megallo *mozgo = megallok->megallo;
@@ -154,112 +145,132 @@ Menu *gen_megallo_selector_menu(Metro *metro, Menu *parent, char *searchKey,
         }
         int i = 0;
         while (mozgo != NULL && i < 4) {
-            megallo_selector_menu->items[i].text =
-                malloc(sizeof(char) * strlen(mozgo->nev) + 1);
-            strcpy(megallo_selector_menu->items[i].text, mozgo->nev);
+            allocate_string(&megallo_selector_menu->items[i].text, mozgo->nev);
             mozgo = mozgo->kovetkezo;
             i++;
         }
         if (i < 4) {
             for (int j = i; j < 4; j++) {
-                megallo_selector_menu->items[j].text = malloc(sizeof(char));
-                megallo_selector_menu->items[j].text[0] = '\0';
+                allocate_string(&megallo_selector_menu->items[j].text, "");
             }
         }
 
         return megallo_selector_menu;
     }
 }
+void add_char_to_astring(AString *astring, char ch) {
+    astring->key =
+        realloc(astring->key, sizeof(char) * astring->size + sizeof(char) + 1);
+    astring->key[astring->size] = ch;
+    astring->key[astring->size + 1] = '\0';
+    astring->size++;
+}
+
+void remove_last_char_from_string(AString *astring) {
+    astring->key = realloc(astring->key,
+                           sizeof(char) * strlen(astring->key) - sizeof(char));
+    astring->key[strlen(astring->key) - 1] = '\0';
+    astring->size--;
+}
 
 int main() {
     init_ncurses();
+
+    // Menu setup
     Menu *current_menu;
     int selected = 0;
-    Menu main_menu = {
+    int megalloSelectorIdx = 0;
+    selector_type selectorType;
+    Menu mainMenu = {
         MAIN_MENU, (MenuItem[]){{"Menetrend kezelése"}, {"Útvonaltervezés"}},
         0,         NULL,
         2,         false,
     };
-    Menu menetrend_menu1_no_menetrend = {
+    Menu menetrendMenu1NoMenetrend = {
         MENETREND_MENU1,
         (MenuItem[]){{"Menetrend Generálása"}},
         0,
-        &main_menu,
+        &mainMenu,
         1,
         false,
     };
-    Menu menetrend_menu1_menetrend = {
+    Menu menetrendMenu1Menetrend = {
         MENETREND_MENU2,
         (MenuItem[]){{"Menetrend Törlése"}, {"Menetrend Újragenerálása"}},
         0,
-        &main_menu,
+        &mainMenu,
         2,
         false,
     };
-    Menu idopont_selector_menu = {
+    Menu idopontSelectorMenu = {
         IDOPONT_SELECTOR, (MenuItem[]){}, 0, NULL, 0, true,
     };
-    current_menu = &main_menu;
-    int ch;
+    current_menu = &mainMenu;
+
+    int ch;  // character input
+
     Utvonalterv utvonalterv = {
         NULL, NULL, NULL, NULL, 0, NULL,
     };
-    bool utvonalterv_alloced = false;
+    bool utvonaltervAlloced = false;
     Metro *metro = NULL;
+
     AString searchKey = {NULL, 0};
-    int megalloSelectorIdx = 0;
+
     AString idopont = {NULL, 0};
-    selector_type selectorType;
+
+    int headerSize = 1;
+
     while (1) {
         if (access("menetrend.csv", F_OK) == 0) {
-            if (utvonalterv_alloced) {
-                free(main_menu.items[1].text);
-                utvonalterv_alloced = false;
+            if (utvonaltervAlloced) {
+                free(mainMenu.items[1].text);
+                utvonaltervAlloced = false;
             }
-            main_menu.items[1].text =
-                malloc(sizeof(char) * strlen("Útvonaltervezés") + 1);
-            strcpy(main_menu.items[1].text, "Útvonaltervezés");
-            utvonalterv_alloced = true;
+            allocate_string(&mainMenu.items[1].text, "Útvonaltervezés");
+            utvonaltervAlloced = true;
         } else {
-            if (utvonalterv_alloced) {
-                free(main_menu.items[1].text);
-                utvonalterv_alloced = false;
+            if (utvonaltervAlloced) {
+                free(mainMenu.items[1].text);
+                utvonaltervAlloced = false;
             }
-            main_menu.items[1].text =
-                malloc(sizeof(char) * strlen("Ú̶t̶v̶o̶n̶a̶l̶t̶e̶r̶v̶e̶z̶é̶s̶") + 1);
-            strcpy(main_menu.items[1].text, "Ú̶t̶v̶o̶n̶a̶l̶t̶e̶r̶v̶e̶z̶é̶s̶");
-            utvonalterv_alloced = true;
+            allocate_string(&mainMenu.items[1].text, "Ú̶t̶v̶o̶n̶a̶l̶t̶e̶r̶v̶e̶z̶é̶s̶");
+            utvonaltervAlloced = true;
         }
         mvprintw(0, 0, "Selected: %d %d", megalloSelectorIdx, selected);
-        if (current_menu == &menetrend_menu1_no_menetrend &&
+        if (current_menu == &menetrendMenu1NoMenetrend &&
             access("menetrend.csv", F_OK) == 0) {
-            current_menu = &menetrend_menu1_menetrend;
+            current_menu = &menetrendMenu1Menetrend;
         }
-        if (current_menu == &menetrend_menu1_menetrend &&
+        if (current_menu == &menetrendMenu1Menetrend &&
             access("menetrend.csv", F_OK) != 0) {
-            current_menu = &menetrend_menu1_no_menetrend;
+            current_menu = &menetrendMenu1NoMenetrend;
         }
         for (int i = 0; i < current_menu->size; i++) {
             if (i == selected) {
                 attron(A_REVERSE);
             }
-            mvprintw(i + 1, 0, "%s", current_menu->items[i].text);
+            mvprintw(i + headerSize, 0, "%s", current_menu->items[i].text);
             if (i == selected) {
                 attroff(A_REVERSE);
             }
         }
         if (current_menu->parent != NULL) {
-            int back_index =
-                current_menu->type == MEGALLO_SELECTOR
-                    ? count_megallok(
-                          megallo_search(metro, searchKey.key)->megallo) < 4
-                          ? current_menu->size
-                          : 4
-                    : current_menu->size;
+            int back_index;
+            if (current_menu->type == MEGALLO_SELECTOR) {
+                back_index =
+                    count_megallok(
+                        megallo_search(metro, searchKey.key)->megallo) < 4
+                        ? current_menu->size
+                        : 4;
+            } else {
+                back_index = current_menu->size;
+            }
             if (back_index == selected) {
                 attron(A_REVERSE);
             }
-            mvprintw(back_index + 1, 0, "Vissza");
+            if (current_menu->type != IDOPONT_SELECTOR)
+                mvprintw(back_index + headerSize, 0, "<- Vissza");
             if (back_index == selected) {
                 attroff(A_REVERSE);
             }
@@ -267,7 +278,7 @@ int main() {
             if (current_menu->size == selected) {
                 attron(A_REVERSE);
             }
-            mvprintw(current_menu->size + 1, 0, "Kilépés");
+            mvprintw(current_menu->size + headerSize, 0, "Kilépés");
             if (current_menu->size == selected) {
                 attroff(A_REVERSE);
             }
@@ -275,12 +286,12 @@ int main() {
         if (current_menu->accepts_input) {
             switch (current_menu->type) {
                 case MEGALLO_SELECTOR:
-                    mvprintw(current_menu->size + 2, 0, "Keresés: %s",
-                             searchKey.key);
+                    mvprintw(current_menu->size + headerSize + 1, 0,
+                             "Keresés: %s", searchKey.key);
                     break;
                 case IDOPONT_SELECTOR:
-                    mvprintw(current_menu->size, 0, "Időpont (óó:pp): %s",
-                             idopont.key);
+                    mvprintw(current_menu->size + headerSize, 0,
+                             "Időpont (óó:pp): %s", idopont.key);
                     break;
                 default:
                     break;
@@ -371,13 +382,13 @@ int main() {
             } else {
                 if (current_menu->type == MAIN_MENU) {
                     if (selected == 0) {
-                        current_menu = &menetrend_menu1_no_menetrend;
+                        current_menu = &menetrendMenu1NoMenetrend;
                         selected = 0;
                     }
                     if (selected == 1) {
                         if (access("menetrend.csv", F_OK) == 0) {
                             current_menu =
-                                gen_utvonalmenu(&utvonalterv, &main_menu);
+                                gen_utvonalmenu(&utvonalterv, &mainMenu);
                             selected = 0;
                             metro = menetrend_beolvas();
                             utvonalterv =
@@ -421,14 +432,18 @@ int main() {
                     if (selected == 2) {
                         idopont.key = malloc(sizeof(char));
                         idopont.size = 0;
-                        idopont_selector_menu.parent = current_menu;
-                        current_menu = &idopont_selector_menu;
+                        idopontSelectorMenu.parent = current_menu;
+                        current_menu = &idopontSelectorMenu;
                         selected = 0;
                     }
 
                 } else if (current_menu->type == MEGALLO_SELECTOR) {
-                    Megallo *megallo =
-                        megallo_search(metro, searchKey.key)->megallo;
+                    MegalloList *megallok =
+                        megallo_search(metro, searchKey.key);
+                    if (megallok->size == 0) {
+                        continue;
+                    }
+                    Megallo *megallo = megallok->megallo;
                     sort_megallo_array(megallo);
                     int i = 0;
                     while (megallo != NULL && current_menu->size < 4
@@ -459,14 +474,8 @@ int main() {
                 switch (current_menu->type) {
                     case MEGALLO_SELECTOR:
                         if (searchKey.size > 0) {
-                            searchKey.key =
-                                realloc(searchKey.key,
-                                        sizeof(char) * strlen(searchKey.key) -
-                                            sizeof(char) + 1);
-                            searchKey.key[strlen(searchKey.key) - 1] = '\0';
-                            searchKey.size--;
+                            remove_last_char_from_string(&searchKey);
                             megalloSelectorIdx = 0;
-                            current_menu->selected = 0;
                             selected = 0;
                             current_menu = gen_megallo_selector_menu(
                                 metro, current_menu->parent, searchKey.key,
@@ -475,12 +484,7 @@ int main() {
                         break;
                     case IDOPONT_SELECTOR:
                         if (idopont.size > 0) {
-                            idopont.key =
-                                realloc(idopont.key,
-                                        sizeof(char) * strlen(idopont.key) -
-                                            sizeof(char) + 1);
-                            idopont.key[strlen(idopont.key) - 1] = '\0';
-                            idopont.size--;
+                            remove_last_char_from_string(&idopont);
                         }
                         break;
 
@@ -490,15 +494,8 @@ int main() {
             } else {
                 switch (current_menu->type) {
                     case MEGALLO_SELECTOR:
-                        searchKey.key =
-                            realloc(searchKey.key,
-                                    sizeof(char) * strlen(searchKey.key) +
-                                        sizeof(char) + 1);
-                        searchKey.key[strlen(searchKey.key)] = ch;
-                        searchKey.key[strlen(searchKey.key) + 1] = '\0';
-                        searchKey.size++;
+                        add_char_to_astring(&searchKey, ch);
                         megalloSelectorIdx = 0;
-                        current_menu->selected = 0;
                         selected = 0;
                         current_menu = gen_megallo_selector_menu(
                             metro, current_menu->parent, searchKey.key,
@@ -508,66 +505,32 @@ int main() {
                         switch (idopont.size) {
                             case 0:
                                 if (ch >= '0' && ch <= '2') {
-                                    idopont.key = realloc(idopont.key,
-                                                          sizeof(char) * 2 + 1);
-                                    idopont.key[0] = ch;
-                                    idopont.key[1] = '\0';
-                                    idopont.size++;
+                                    add_char_to_astring(&idopont, ch);
                                 }
                                 break;
                             case 1:
-                                if (idopont.key[0] == '0' && ch >= '0' &&
-                                    ch <= '9') {
-                                    idopont.key = realloc(idopont.key,
-                                                          sizeof(char) * 3 + 1);
-                                    idopont.key[1] = ch;
-                                    idopont.key[2] = '\0';
-                                    idopont.size++;
-                                } else if (idopont.key[0] == '1' && ch >= '0' &&
-                                           ch <= '9') {
-                                    idopont.key = realloc(idopont.key,
-                                                          sizeof(char) * 3 + 1);
-                                    idopont.key[1] = ch;
-                                    idopont.key[2] = '\0';
-                                    idopont.size++;
-                                } else if (idopont.key[0] == '2' && ch >= '0' &&
-                                           ch <= '3') {
-                                    idopont.key =
-                                        realloc(idopont.key, sizeof(char) * 3 +
-                                                                 sizeof(char));
-                                    idopont.key[1] = ch;
-                                    idopont.key[2] = '\0';
-                                    idopont.size++;
+                                if ((idopont.key[0] == '0' && ch >= '0' &&
+                                     ch <= '9') ||
+                                    (idopont.key[0] == '1' && ch >= '0' &&
+                                     ch <= '9') ||
+                                    (idopont.key[0] == '2' && ch >= '0' &&
+                                     ch <= '3')) {
+                                    add_char_to_astring(&idopont, ch);
                                 }
                                 break;
                             case 2:
                                 if (ch == ':') {
-                                    idopont.key =
-                                        realloc(idopont.key, sizeof(char) * 4 +
-                                                                 sizeof(char));
-                                    idopont.key[2] = ch;
-                                    idopont.key[3] = '\0';
-                                    idopont.size++;
+                                    add_char_to_astring(&idopont, ch);
                                 }
                                 break;
                             case 3:
                                 if (ch >= '0' && ch <= '5') {
-                                    idopont.key =
-                                        realloc(idopont.key, sizeof(char) * 5 +
-                                                                 sizeof(char));
-                                    idopont.key[3] = ch;
-                                    idopont.key[4] = '\0';
-                                    idopont.size++;
+                                    add_char_to_astring(&idopont, ch);
                                 }
                                 break;
                             case 4:
                                 if (ch >= '0' && ch <= '9') {
-                                    idopont.key =
-                                        realloc(idopont.key, sizeof(char) * 6 +
-                                                                 sizeof(char));
-                                    idopont.key[4] = ch;
-                                    idopont.key[5] = '\0';
-                                    idopont.size++;
+                                    add_char_to_astring(&idopont, ch);
                                 }
                                 break;
                             default:
