@@ -60,3 +60,9 @@ char *idopont_to_string(Idopont idopont) {
     free(perc);
     return s;
 }
+
+Idopont string_to_idopont(char *s) {
+    Idopont idopont = {0, 0};
+    sscanf(s, "%d:%d", &idopont.ora, &idopont.perc);
+    return idopont;
+}
