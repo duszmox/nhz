@@ -66,3 +66,17 @@ Idopont string_to_idopont(char *s) {
     sscanf(s, "%d:%d", &idopont.ora, &idopont.perc);
     return idopont;
 }
+
+bool ido_kisebb(Idopont ido1, Idopont ido2) {
+    if (ido1.ora < ido2.ora) {
+        return true;
+    } else if (ido1.ora > ido2.ora) {
+        return false;
+    } else {
+        if (ido1.perc < ido2.perc) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+}

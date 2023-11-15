@@ -38,15 +38,6 @@ typedef struct Menu {
     bool accepts_input;
 } Menu;
 
-typedef struct Utvonalterv {
-    Megallo *indulo;
-    Megallo *cel;
-    Idopont *indulasiIdo;
-    Idopont *erkezesiIdo;
-    int atszallasokSzama;
-    struct Utvonalterv *kovetkezo;
-} Utvonalterv;
-
 typedef struct AString {
     char *key;
     int size;
@@ -75,6 +66,7 @@ void init_ncurses() {
     raw();
     keypad(stdscr, TRUE);
     noecho();
+    curs_set(0);
 }
 
 Menu *gen_utvonalmenu(Utvonalterv *utvonalterv, Menu *parent) {
@@ -88,23 +80,23 @@ Menu *gen_utvonalmenu(Utvonalterv *utvonalterv, Menu *parent) {
     char *induloMegallo = utvonalterv->indulo == NULL
                               ? "Nincs megadva"
                               : utvonalterv->indulo->nev;
-    char *indulo =
-        malloc(sizeof(char) * strlen(induloMegallo) + 1 + strlen("Induló: ()"));
-    sprintf(indulo, "Induló: (%s)", induloMegallo);
+    char *indulo = malloc(sizeof(char) * strlen(induloMegallo) + 1 +
+                          strlen("Indulási állomás: ()"));
+    sprintf(indulo, "Indulási állomás: (%s)", induloMegallo);
     allocate_string(&utvonalterv_menu->items[0].text, indulo);
     char *celMegallo =
         utvonalterv->cel == NULL ? "Nincs megadva" : utvonalterv->cel->nev;
-    char *cel =
-        malloc(sizeof(char) * strlen(celMegallo) + 1 + strlen("Cél: ()"));
-    sprintf(cel, "Cél: (%s)", celMegallo);
+    char *cel = malloc(sizeof(char) * strlen(celMegallo) + 1 +
+                       strlen("Célállomás: ()"));
+    sprintf(cel, "Célállomás: (%s)", celMegallo);
     allocate_string(&utvonalterv_menu->items[1].text, cel);
     char *indulasiIdo = utvonalterv->indulasiIdo == NULL
                             ? "Nincs megadva"
                             : idopont_to_string(*utvonalterv->indulasiIdo);
 
     char *indulasiIdoText = malloc(sizeof(char) * strlen(indulasiIdo) + 1 +
-                                   strlen("Indulási idő: ()"));
-    sprintf(indulasiIdoText, "Indulási idő: (%s)", indulasiIdo);
+                                   strlen("Indulás időpontja: ()"));
+    sprintf(indulasiIdoText, "Indulás időpontja: (%s)", indulasiIdo);
     allocate_string(&utvonalterv_menu->items[2].text, indulasiIdoText);
     allocate_string(&utvonalterv_menu->items[3].text, "Tervezés");
     return utvonalterv_menu;
@@ -219,9 +211,9 @@ int main() {
 
     AString idopont = {NULL, 0};
 
-    int headerSize = 1;
+    int headerSize = 5;
 
-    while (1) {
+    while (true) {
         if (access("menetrend.csv", F_OK) == 0) {
             if (utvonaltervAlloced) {
                 free(mainMenu.items[1].text);
@@ -237,7 +229,26 @@ int main() {
             allocate_string(&mainMenu.items[1].text, "Ú̶t̶v̶o̶n̶a̶l̶t̶e̶r̶v̶e̶z̶é̶s̶");
             utvonaltervAlloced = true;
         }
-        mvprintw(0, 0, "Selected: %d %d", megalloSelectorIdx, selected);
+        mvprintw(
+            0, 0,
+            "   __  ________________  ____    _________  ___   _  _________  "
+            "____  "
+            "___ ________  ______");
+        mvprintw(
+            1, 0,
+            "  /  |/  / __/_  __/ _ \\/ __ \\  /_  __/ _ \\/ _ | / |/ / __/ _ "
+            "\\/ "
+            "__ \\/ _ /_  __/ / / / __/");
+        mvprintw(
+            2, 0,
+            " / /|_/ / _/  / / / , _/ /_/ /   / / / , _/ __ |/    _\\ \\/ ___/ "
+            "/_/ "
+            "/ , _// / / /_/ _\\ \\");
+        mvprintw(
+            3, 0,
+            "/_/  /_/___/ /_/ /_/|_|\\____/   /_/ /_/|_/_/ |_/_/|_/___/_/   "
+            "\\____/_/|_|/_/  \\____/___/");
+        mvprintw(4, 0, "\n");
         if (current_menu == &menetrendMenu1NoMenetrend &&
             access("menetrend.csv", F_OK) == 0) {
             current_menu = &menetrendMenu1Menetrend;
