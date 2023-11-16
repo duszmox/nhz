@@ -1,6 +1,5 @@
+#include "metroGraph.h"
 
-#ifndef HEADER_FILE
-#define HEADER_FILE
 #include <limits.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -10,27 +9,6 @@
 
 #include "idopontok.h"
 #include "utvonalterv.h"
-#endif
-#define INFINITY INT_MAX
-// Structure to represent an edge in the graph
-struct El {
-    int celAllomas;  // The destination vertex
-    int suly;        // The weight of the edge
-    struct El* kov;  // Pointer to the next edge in the list
-};
-
-// Structure to represent a vertex in the graph
-struct AllomasVertex {
-    int taroltMegallokSzama;
-    Megallo** megallok;  // The data or label associated with the vertex
-    struct El* elek;  // Pointer to the list of edges connected to this vertex
-};
-
-// Structure to represent the weighted graph
-struct MetroGraph {
-    int allomasVSzam;            // Number of vertices in the graph
-    struct AllomasVertex* tomb;  // Array of vertices
-};
 int* dijkstra(struct MetroGraph* graph, int source);
 int minDistance(int* distance, bool* visited, int V);
 
@@ -42,9 +20,9 @@ struct MetroGraph* createGraph(int numVertices) {
                                                 sizeof(struct AllomasVertex));
 
     for (int i = 0; i < numVertices; ++i) {
-        graph->tomb[i].megallok =
-            malloc(sizeof(Megallo));  // You can use any data type or structure
-                                      // for the vertex data
+        graph->tomb[i].megallok = (struct Megallo**)malloc(
+            sizeof(Megallo));        // You can use any data type or
+                                     // structure for the vertex data
         graph->tomb[i].elek = NULL;  // Initialize the edge list for each vertex
     }
 
@@ -113,11 +91,11 @@ struct AllomasVertex* get_allomas_vertex_by_name(struct MetroGraph* graph,
 
 void resize_metro_graph(struct MetroGraph* graph) {
     graph->allomasVSzam++;
-    graph->tomb = realloc(graph->tomb,
-                          graph->allomasVSzam * sizeof(struct AllomasVertex));
+    graph->tomb = (struct AllomasVertex*)realloc(
+        graph->tomb, graph->allomasVSzam * sizeof(struct AllomasVertex));
     graph->tomb[graph->allomasVSzam - 1].megallok =
-        malloc(sizeof(Megallo));  // You can use any data type or structure for
-                                  // the vertex data
+        (Megallo**)malloc(sizeof(Megallo));  // You can use any data type or
+                                             // structure for the vertex data
     graph->tomb[graph->allomasVSzam - 1].elek = NULL;
     graph->tomb[graph->allomasVSzam - 1].taroltMegallokSzama = 0;
 }
@@ -126,7 +104,7 @@ int* dijkstra(struct MetroGraph* graph, int source) {
     bool* visited = (bool*)malloc(graph->allomasVSzam * sizeof(bool));
 
     for (int i = 0; i < graph->allomasVSzam; i++) {
-        distance[i] = INFINITY;
+        distance[i] = INT_MAX;
         visited[i] = false;
     }
 
@@ -139,7 +117,7 @@ int* dijkstra(struct MetroGraph* graph, int source) {
         struct El* currentEdge = graph->tomb[u].elek;
         while (currentEdge != NULL) {
             int v = currentEdge->celAllomas;
-            if (!visited[v] && distance[u] != INFINITY &&
+            if (!visited[v] && distance[u] != INT_MAX &&
                 distance[u] + currentEdge->suly < distance[v]) {
                 distance[v] = distance[u] + currentEdge->suly;
             }
@@ -152,7 +130,7 @@ int* dijkstra(struct MetroGraph* graph, int source) {
 }
 
 int minDistance(int* distance, bool* visited, int V) {
-    int min = INFINITY, min_index;
+    int min = INT_MAX, min_index;
 
     for (int v = 0; v < V; v++) {
         if (visited[v] == false && distance[v] <= min) {
@@ -227,32 +205,76 @@ struct Utvonalterv* dijkstra_to_utvonalterv(struct MetroGraph* graph,
         return NULL;
     }
 
-    // Create an array to store the path
     int pathLength = 0;
     int* path = (int*)malloc(pathLength * sizeof(int));
 
     int current = start;
     while (current != veg) {
-        path = realloc(path, (pathLength + 1) * sizeof(int));
+        path = (int*)realloc(path, (pathLength + 1) * sizeof(int));
         path[pathLength++] = current;
         current = findPrevious(distance, graph->tomb[current].elek);
     }
 
     struct Utvonalterv* tripPlan = NULL;
     for (int i = pathLength; i >= 1; i--) {
-        struct Utvonalterv* uj = malloc(sizeof(struct Utvonalterv));
+        struct Utvonalterv* uj =
+            (Utvonalterv*)malloc(sizeof(struct Utvonalterv));
         if (uj == NULL) {
             printf("Nem sikerult helyet foglalni az utvonaltervnek!\n");
             return NULL;
         }
-        if (i == pathLength)
+        if (i == pathLength) {
             uj->indulo = graph->tomb[veg].megallok[0];
-        else
+            uj->indulasiIdo = &indulasiIdo;
+        } else {
             uj->indulo = graph->tomb[path[i]].megallok[0];
-        uj->cel = graph->tomb[path[i - 1]].megallok[0];
+            uj->indulasiIdo = (Idopont*)malloc(sizeof(Idopont));
+            Utvonalterv* elozo = tripPlan;
+            while (elozo->kovetkezo != NULL) {
+                elozo = elozo->kovetkezo;
+            }
+            *uj->indulasiIdo = *elozo->erkezesiIdo;
+        }
+        Megallo** celMegallok = graph->tomb[path[i - 1]].megallok;
+        for (int j = 0; j < graph->tomb[path[i - 1]].taroltMegallokSzama; j++) {
+            Megallo* mozgo = celMegallok[j];
+            while (mozgo != NULL) {
+                if (strcmp(mozgo->nev, uj->indulo->nev) != 0) {
+                    uj->cel = celMegallok[j];
+                    break;
+                }
+                mozgo = mozgo->kovetkezo;
+            }
+            mozgo = celMegallok[j];
+            while (mozgo != NULL) {
+                if (strcmp(mozgo->nev, uj->indulo->nev) != 0) {
+                    uj->cel = celMegallok[j];
+                    break;
+                }
+                mozgo = mozgo->elozo;
+            }
+        }
         uj->vonal = are_megallok_on_same_vonal_string(metro, uj->indulo->nev,
                                                       uj->cel->nev);
-        uj->indulasiIdo = &indulasiIdo;
+        int* megalloTav =
+            megallo_distance(uj->vonal, uj->indulo->nev, uj->cel->nev);
+        uj->erkezesiIdo = (Idopont*)malloc(sizeof(Idopont));
+        int indulasiIdoIndex = 0;
+        if (*megalloTav > 0) {
+            while (ido_kisebb(uj->indulo->ido1[indulasiIdoIndex],
+                              *uj->indulasiIdo)) {
+                indulasiIdoIndex++;
+            }
+            *uj->indulasiIdo = uj->indulo->ido1[indulasiIdoIndex];
+            *uj->erkezesiIdo = uj->cel->ido1[indulasiIdoIndex];
+        } else {
+            while (ido_kisebb(uj->indulo->ido2[indulasiIdoIndex],
+                              *uj->indulasiIdo)) {
+                indulasiIdoIndex++;
+            }
+            *uj->indulasiIdo = uj->indulo->ido2[indulasiIdoIndex];
+            *uj->erkezesiIdo = uj->cel->ido2[indulasiIdoIndex];
+        }
         if (tripPlan == NULL) {
             tripPlan = uj;
         } else {
@@ -267,12 +289,12 @@ struct Utvonalterv* dijkstra_to_utvonalterv(struct MetroGraph* graph,
     return tripPlan;
 }
 
-Utvonalterv* utvonaltervezes(Metro* metro, char* indulo, char* cel,
-                             Idopont indulasiIdo) {
+struct Utvonalterv* utvonaltervezes(Metro* metro, char* indulo, char* cel,
+                                    Idopont indulasiIdo) {
     int vonalakSzama = 0;
     struct MetroGraph* metroGraph = createGraph(0);
     Vonal* mozgo = metro->vonalak;
-    AtszallasiMegallo** atszallasiMegallok = malloc(
+    AtszallasiMegallo** atszallasiMegallok = (AtszallasiMegallo**)malloc(
         sizeof(AtszallasiMegallo));  // array of pointers to atszallasi megallok
     while (mozgo != NULL) {
         AtszallasiMegallo* uj = atszallasi_megallok_on_vonal(metro, mozgo);
@@ -311,7 +333,7 @@ Utvonalterv* utvonaltervezes(Metro* metro, char* indulo, char* cel,
     if (induloVertex == NULL) {
         resize_metro_graph(metroGraph);
         metroGraph->tomb[metroGraph->allomasVSzam - 1].megallok[0] =
-            malloc(sizeof(Megallo));
+            (Megallo*)malloc(sizeof(Megallo));
         Vonal* induloVonal = find_vonal_for_megallo_string(metro, indulo);
         if (induloVonal == NULL) {
             printf("Nem sikerult vonalat szerezni!\n");
@@ -332,7 +354,7 @@ Utvonalterv* utvonaltervezes(Metro* metro, char* indulo, char* cel,
     if (celVertex == NULL) {
         resize_metro_graph(metroGraph);
         metroGraph->tomb[metroGraph->allomasVSzam - 1].megallok[0] =
-            malloc(sizeof(Megallo));
+            (Megallo*)malloc(sizeof(Megallo));
         Vonal* celVonal = find_vonal_for_megallo_string(metro, cel);
         Megallo* celMegallo = celVonal->megallo;
         while (celMegallo != NULL) {
@@ -372,26 +394,17 @@ Utvonalterv* utvonaltervezes(Metro* metro, char* indulo, char* cel,
     printSolution(metroGraph, distance, source, destination);
     Utvonalterv* utvonalterv = dijkstra_to_utvonalterv(
         metroGraph, distance, source, destination, indulasiIdo, metro);
-    Utvonalterv *mozgoUtvonalterv = utvonalterv, *elozoUtvonalterv = NULL;
+    Utvonalterv* mozgoUtvonalterv = utvonalterv;
     while (mozgoUtvonalterv != NULL) {
         printf("Indulo: %s\n", mozgoUtvonalterv->indulo->nev);
         printf("Cel: %s\n", mozgoUtvonalterv->cel->nev);
         printf("Vonal: %s\n", mozgoUtvonalterv->vonal->nev);
+        printf("Indulasi ido: %s\n",
+               idopont_to_string(*mozgoUtvonalterv->indulasiIdo));
+        printf("Erkezesi ido: %s\n\n",
+               idopont_to_string(*mozgoUtvonalterv->erkezesiIdo));
 
-        elozoUtvonalterv = mozgoUtvonalterv;
         mozgoUtvonalterv = mozgoUtvonalterv->kovetkezo;
     }
     free(distance);
-}
-
-int main() {
-    char indulo[50] = "Göncz Árpád Városközpont";
-    char cel[50] = "Mexikói Út";
-    Idopont indulasiIdo = (Idopont){8, 0};
-    Metro* metro = menetrend_beolvas();
-    if (metro == NULL) {
-        printf("Hiba a menetrend beolvasasakor!\n");
-        return 1;
-    }
-    Utvonalterv* utvonalterv = utvonaltervezes(metro, indulo, cel, indulasiIdo);
 }
