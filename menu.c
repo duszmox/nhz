@@ -173,6 +173,9 @@ Menu *utvonalterv_visualizer_menu(Utvonalterv *utvonalterv, Menu *parent) {
     menu->parent = parent;
     Utvonalterv *mozgo = utvonalterv;
     int size = 0;
+    if (mozgo == NULL) {
+        size = 1;
+    }
     while (mozgo != NULL) {
         size += 2;  // ket megallo
         size += 3;
@@ -182,14 +185,20 @@ Menu *utvonalterv_visualizer_menu(Utvonalterv *utvonalterv, Menu *parent) {
     size -= 2;
     menu->size = size;
     menu->items = malloc(sizeof(MenuItem) * size);
+    if (size == 1) {
+        allocate_string(&menu->items[0].text, "Nincs találat");
+        menu->selected = 1;
+        menu->accepts_input = false;
+        return menu;
+    }
     mozgo = utvonalterv;
     int i = 0;
     while (mozgo != NULL) {
         char *indulo = malloc(sizeof(char) * strlen(mozgo->indulo->nev) + 1 +
                               strlen("O-()  - ") + strlen(mozgo->vonal->nev) +
                               strlen(idopont_to_string(*mozgo->indulasiIdo)));
-        sprintf(indulo, "O-(%s)  - %s %s", mozgo->vonal->nev,
-                mozgo->indulo->nev, idopont_to_string(*mozgo->indulasiIdo));
+        sprintf(indulo, "O-(%s) - %s %s", mozgo->vonal->nev, mozgo->indulo->nev,
+                idopont_to_string(*mozgo->indulasiIdo));
         allocate_string(&menu->items[i].text, indulo);
         i++;
         allocate_string(&menu->items[i].text, "|");
@@ -201,7 +210,7 @@ Menu *utvonalterv_visualizer_menu(Utvonalterv *utvonalterv, Menu *parent) {
         char *interText =
             malloc(sizeof(char) * log10(megalloTav) + log10(idoKulonbseg) +
                    strlen("|--  megálló -  perc") + 1);
-        sprintf(interText, "|--  %d megálló - %d perc", megalloTav,
+        sprintf(interText, "|-- %d megálló - %d perc", megalloTav,
                 idoKulonbseg);
         allocate_string(&menu->items[i].text, interText);
         i++;
@@ -210,7 +219,7 @@ Menu *utvonalterv_visualizer_menu(Utvonalterv *utvonalterv, Menu *parent) {
         char *cel = malloc(sizeof(char) * strlen(mozgo->cel->nev) + 1 +
                            strlen("O-()  - ") + strlen(mozgo->vonal->nev) +
                            strlen(idopont_to_string(*mozgo->erkezesiIdo)));
-        sprintf(cel, "O-(%s)  - %s %s", mozgo->vonal->nev, mozgo->cel->nev,
+        sprintf(cel, "O-(%s) - %s %s", mozgo->vonal->nev, mozgo->cel->nev,
                 idopont_to_string(*mozgo->erkezesiIdo));
         allocate_string(&menu->items[i].text, cel);
         i++;
@@ -224,7 +233,11 @@ Menu *utvonalterv_visualizer_menu(Utvonalterv *utvonalterv, Menu *parent) {
         }
         mozgo = mozgo->kovetkezo;
     }
+    allocate_string(&menu->items[i].text, "");
     menu->selected = size;
+    menu->accepts_input = false;
+
+    menu->selected = 1;
     menu->accepts_input = false;
     return menu;
 }

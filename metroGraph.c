@@ -1,6 +1,7 @@
 #include "metroGraph.h"
 
 #include <limits.h>
+#include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -77,12 +78,13 @@ void printGraph(struct MetroGraph* graph) {
 //     free(graph->tomb);
 //     free(graph);
 // }
-struct AllomasVertex* get_allomas_vertex_by_name(struct MetroGraph* graph,
-                                                 char* name) {
+int* get_allomas_vertex_by_name(struct MetroGraph* graph, char* name) {
     for (int i = 0; i < graph->allomasVSzam; i++) {
         for (int j = 0; j < graph->tomb[i].taroltMegallokSzama; j++) {
             if (strcmp(graph->tomb[i].megallok[j]->nev, name) == 0) {
-                return &graph->tomb[i];
+                int* index = (int*)malloc(sizeof(int));
+                *index = i;
+                return index;
             }
         }
     }
@@ -223,37 +225,78 @@ struct Utvonalterv* dijkstra_to_utvonalterv(struct MetroGraph* graph,
             printf("Nem sikerult helyet foglalni az utvonaltervnek!\n");
             return NULL;
         }
+        Idopont* tmpIndulasiIdo = (Idopont*)malloc(sizeof(Idopont));
+        uj->indulasiIdo = (Idopont*)malloc(sizeof(Idopont));
         if (i == pathLength) {
-            uj->indulo = graph->tomb[veg].megallok[0];
-            uj->indulasiIdo = &indulasiIdo;
+            *tmpIndulasiIdo = indulasiIdo;
         } else {
-            uj->indulo = graph->tomb[path[i]].megallok[0];
-            uj->indulasiIdo = (Idopont*)malloc(sizeof(Idopont));
             Utvonalterv* elozo = tripPlan;
             while (elozo->kovetkezo != NULL) {
                 elozo = elozo->kovetkezo;
             }
-            *uj->indulasiIdo = *elozo->erkezesiIdo;
+            *tmpIndulasiIdo = *elozo->erkezesiIdo;
         }
-        Megallo** celMegallok = graph->tomb[path[i - 1]].megallok;
+        Megallo** induloMegallo =
+            graph->tomb[i == pathLength ? veg : path[i]].megallok;
+        Megallo** celMegallo = graph->tomb[path[i - 1]].megallok;
+        for (int j = 0;
+             j <
+             graph->tomb[i == pathLength ? veg : path[i]].taroltMegallokSzama;
+             j++) {
+            Megallo* mozgoMegallo = induloMegallo[j];
+            bool found = false;
+            while (mozgoMegallo != NULL) {
+                if (strcmp(mozgoMegallo->nev, celMegallo[0]->nev) == 0) {
+                    uj->cel = mozgoMegallo;
+                    found = true;
+                    break;
+                }
+                mozgoMegallo = mozgoMegallo->kovetkezo;
+            }
+            if (found) {
+                break;
+            }
+            mozgoMegallo = induloMegallo[j];
+            while (mozgoMegallo != NULL) {
+                if (strcmp(mozgoMegallo->nev, celMegallo[0]->nev) == 0) {
+                    uj->cel = mozgoMegallo;
+                    found = true;
+                    break;
+                }
+                mozgoMegallo = mozgoMegallo->elozo;
+            }
+            if (found) {
+                break;
+            }
+        }
         for (int j = 0; j < graph->tomb[path[i - 1]].taroltMegallokSzama; j++) {
-            Megallo* mozgo = celMegallok[j];
-            while (mozgo != NULL) {
-                if (strcmp(mozgo->nev, uj->indulo->nev) != 0) {
-                    uj->cel = celMegallok[j];
+            Megallo* mozgoMegallo = celMegallo[j];
+            bool found = false;
+            while (mozgoMegallo != NULL) {
+                if (strcmp(mozgoMegallo->nev, induloMegallo[0]->nev) == 0) {
+                    uj->indulo = mozgoMegallo;
+                    found = true;
                     break;
                 }
-                mozgo = mozgo->kovetkezo;
+                mozgoMegallo = mozgoMegallo->kovetkezo;
             }
-            mozgo = celMegallok[j];
-            while (mozgo != NULL) {
-                if (strcmp(mozgo->nev, uj->indulo->nev) != 0) {
-                    uj->cel = celMegallok[j];
+            if (found) {
+                break;
+            }
+            mozgoMegallo = celMegallo[j];
+            while (mozgoMegallo != NULL) {
+                if (strcmp(mozgoMegallo->nev, induloMegallo[0]->nev) == 0) {
+                    uj->indulo = mozgoMegallo;
+                    found = true;
                     break;
                 }
-                mozgo = mozgo->elozo;
+                mozgoMegallo = mozgoMegallo->elozo;
+            }
+            if (found) {
+                break;
             }
         }
+
         uj->vonal = are_megallok_on_same_vonal_string(metro, uj->indulo->nev,
                                                       uj->cel->nev);
         int* megalloTav =
@@ -262,14 +305,14 @@ struct Utvonalterv* dijkstra_to_utvonalterv(struct MetroGraph* graph,
         int indulasiIdoIndex = 0;
         if (*megalloTav > 0) {
             while (ido_kisebb(uj->indulo->ido1[indulasiIdoIndex],
-                              *uj->indulasiIdo)) {
+                              *tmpIndulasiIdo)) {
                 indulasiIdoIndex++;
             }
             *uj->indulasiIdo = uj->indulo->ido1[indulasiIdoIndex];
             *uj->erkezesiIdo = uj->cel->ido1[indulasiIdoIndex];
         } else {
             while (ido_kisebb(uj->indulo->ido2[indulasiIdoIndex],
-                              *uj->indulasiIdo)) {
+                              *tmpIndulasiIdo)) {
                 indulasiIdoIndex++;
             }
             *uj->indulasiIdo = uj->indulo->ido2[indulasiIdoIndex];
@@ -292,10 +335,12 @@ struct Utvonalterv* dijkstra_to_utvonalterv(struct MetroGraph* graph,
 struct Utvonalterv* utvonaltervezes(Metro* metro, char* indulo, char* cel,
                                     Idopont indulasiIdo) {
     int vonalakSzama = 0;
+    int fixStations = 0;
     struct MetroGraph* metroGraph = createGraph(0);
     Vonal* mozgo = metro->vonalak;
     AtszallasiMegallo** atszallasiMegallok = (AtszallasiMegallo**)malloc(
-        sizeof(AtszallasiMegallo));  // array of pointers to atszallasi megallok
+        sizeof(AtszallasiMegallo));  // array of pointers to atszallasi
+                                     // megallok
     while (mozgo != NULL) {
         AtszallasiMegallo* uj = atszallasi_megallok_on_vonal(metro, mozgo);
         if (uj == NULL) {
@@ -310,7 +355,7 @@ struct Utvonalterv* utvonaltervezes(Metro* metro, char* indulo, char* cel,
     for (int i = 0; i < vonalakSzama; i++) {
         AtszallasiMegallo* mozgo2 = *(atszallasiMegallok + i);
         while (mozgo2 != NULL) {
-            struct AllomasVertex* allomasVertex =
+            int* allomasVertex =
                 get_allomas_vertex_by_name(metroGraph, mozgo2->megallo->nev);
             if (allomasVertex == NULL) {
                 resize_metro_graph(metroGraph);
@@ -318,19 +363,22 @@ struct Utvonalterv* utvonaltervezes(Metro* metro, char* indulo, char* cel,
                     mozgo2->megallo;
                 metroGraph->tomb[metroGraph->allomasVSzam - 1]
                     .taroltMegallokSzama = 1;
+                fixStations++;
             } else {
-                allomasVertex->megallok[allomasVertex->taroltMegallokSzama] =
-                    mozgo2->megallo;
-                allomasVertex->taroltMegallokSzama++;
+                metroGraph->tomb[*allomasVertex]
+                    .megallok[metroGraph->tomb[*allomasVertex]
+                                  .taroltMegallokSzama] = mozgo2->megallo;
+                metroGraph->tomb[*allomasVertex].taroltMegallokSzama++;
             }
             mozgo2 = mozgo2->kovetkezo;
         }
     }
-    struct AllomasVertex* induloVertex =
-        get_allomas_vertex_by_name(metroGraph, indulo);
-    struct AllomasVertex* celVertex =
-        get_allomas_vertex_by_name(metroGraph, cel);
+    int* induloVertex = get_allomas_vertex_by_name(metroGraph, indulo);
+    int* celVertex = get_allomas_vertex_by_name(metroGraph, cel);
+    bool induloVan = false;
+    bool celVan = false;
     if (induloVertex == NULL) {
+        induloVan = true;
         resize_metro_graph(metroGraph);
         metroGraph->tomb[metroGraph->allomasVSzam - 1].megallok[0] =
             (Megallo*)malloc(sizeof(Megallo));
@@ -352,6 +400,7 @@ struct Utvonalterv* utvonaltervezes(Metro* metro, char* indulo, char* cel,
         }
     }
     if (celVertex == NULL) {
+        celVan = true;
         resize_metro_graph(metroGraph);
         metroGraph->tomb[metroGraph->allomasVSzam - 1].megallok[0] =
             (Megallo*)malloc(sizeof(Megallo));
@@ -385,26 +434,74 @@ struct Utvonalterv* utvonaltervezes(Metro* metro, char* indulo, char* cel,
         }
     }
     printGraph(metroGraph);
-    int source = metroGraph->allomasVSzam - 2;
-    int destination = metroGraph->allomasVSzam -
-                      1;  // Replace with the index of your destination vertex
+    int source = metroGraph->allomasVSzam - fixStations == 2
+                     ? metroGraph->allomasVSzam - 2
+                 : induloVan ? metroGraph->allomasVSzam - 1
+                             : *induloVertex;
+    int destination = metroGraph->allomasVSzam - fixStations == 2
+                          ? metroGraph->allomasVSzam - 1
+                      : celVan ? metroGraph->allomasVSzam - 1
+                               : *celVertex;
     int* distance = dijkstra(metroGraph, source);
 
-    // Print the solution
-    printSolution(metroGraph, distance, source, destination);
+    // printSolution(metroGraph, distance, source, destination);
     Utvonalterv* utvonalterv = dijkstra_to_utvonalterv(
         metroGraph, distance, source, destination, indulasiIdo, metro);
-    Utvonalterv* mozgoUtvonalterv = utvonalterv;
-    while (mozgoUtvonalterv != NULL) {
-        printf("Indulo: %s\n", mozgoUtvonalterv->indulo->nev);
-        printf("Cel: %s\n", mozgoUtvonalterv->cel->nev);
-        printf("Vonal: %s\n", mozgoUtvonalterv->vonal->nev);
-        printf("Indulasi ido: %s\n",
-               idopont_to_string(*mozgoUtvonalterv->indulasiIdo));
-        printf("Erkezesi ido: %s\n\n",
-               idopont_to_string(*mozgoUtvonalterv->erkezesiIdo));
-
-        mozgoUtvonalterv = mozgoUtvonalterv->kovetkezo;
-    }
     free(distance);
+    return utvonalterv;
 }
+// int main() {
+//     Metro* metro = menetrend_beolvas();
+//     Utvonalterv* utvonalterv =
+//         utvonaltervezes(metro, "Astoria", "Kelenföld Vasútállomás",
+//                         (Idopont){.ora = 0, .perc = 0});
+//     Utvonalterv* mozgo = utvonalterv;
+//     int i = 0;
+//     while (mozgo != NULL) {
+//         char* indulo = malloc(sizeof(char) * strlen(mozgo->indulo->nev) + 1 +
+//                               strlen("O-()  - ") + strlen(mozgo->vonal->nev)
+//                               +
+//                               strlen(idopont_to_string(*mozgo->indulasiIdo)));
+//         sprintf(indulo, "O-(%s) - %s %s", mozgo->vonal->nev,
+//         mozgo->indulo->nev,
+//                 idopont_to_string(*mozgo->indulasiIdo));
+//         printf("%s\n", indulo);
+//         i++;
+//         printf("|\n");
+//         i++;
+//         int megalloTav = abs(*megallo_distance(mozgo->vonal,
+//         mozgo->indulo->nev,
+//                                                mozgo->cel->nev));
+//         int idoKulonbseg =
+//             ido_kulonbseg_perc(*mozgo->indulasiIdo, *mozgo->erkezesiIdo);
+//         char* interText =
+//             malloc(sizeof(char) * log10(megalloTav) + log10(idoKulonbseg) +
+//                    strlen("|--  megálló -  perc") + 1);
+//         sprintf(interText, "|-- %d megálló - %d perc", megalloTav,
+//                 idoKulonbseg);
+//         printf("%s\n", interText);
+//         i++;
+//         printf("|\n");
+//         i++;
+//         char* cel = malloc(sizeof(char) * strlen(mozgo->cel->nev) + 1 +
+//                            strlen("O-()  - ") + strlen(mozgo->vonal->nev) +
+//                            strlen(idopont_to_string(*mozgo->erkezesiIdo)));
+//         sprintf(cel, "O-(%s) - %s %s", mozgo->vonal->nev, mozgo->cel->nev,
+//                 idopont_to_string(*mozgo->erkezesiIdo));
+//         printf("%s\n", cel);
+//         i++;
+//         if (mozgo->kovetkezo != NULL) {
+//             // allocate_string(&menu->items[i].text, "|");
+//             printf("|\n");
+//             i++;
+//             // allocate_string(&menu->items[i].text, "|-- átszállás");
+//             printf("|-- átszállás\n");
+//             i++;
+//             // allocate_string(&menu->items[i].text, "|");
+//             printf("|\n");
+//             i++;
+//         }
+//         mozgo = mozgo->kovetkezo;
+//     }
+//     return 0;
+// }

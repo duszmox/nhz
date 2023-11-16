@@ -28,8 +28,7 @@ struct MetroGraph* createGraph(int numVertices);
 void addEdge(struct MetroGraph* graph, int src, int dest, int weight);
 void printGraph(struct MetroGraph* graph);
 // void freeGraph(struct MetroGraph* graph);
-struct AllomasVertex* get_allomas_vertex_by_name(struct MetroGraph* graph,
-                                                 char* name);
+int* get_allomas_vertex_by_name(struct MetroGraph* graph, char* name);
 void resize_metro_graph(struct MetroGraph* graph);
 int findPrevious(int* distance, struct El* edges);
 void printPath(struct MetroGraph* graph, int* distance, int source,

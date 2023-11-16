@@ -35,6 +35,7 @@ Idopont idopont_osszead(Idopont idopont1, Idopont idopont2) {
 }
 char *bovit_nullaval(Idopont idopont, idopont_tipus it) {
     char *s = (char *)malloc(2 * sizeof(char) + 1);
+    
     if (it == ORA) {
         if (idopont.ora < 10) {
             sprintf(s, "0%d", idopont.ora);

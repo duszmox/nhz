@@ -3,3 +3,8 @@ output
 .vscode
 menetrend.csv
 menu
+menu.dSYM/Contents
+metroGraph
+metroGraph.dSYM
+idopontok.dSYM
+idopontok
