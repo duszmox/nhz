@@ -12,7 +12,7 @@
 #define access _access
 #endif
 
-// #include "debugmalloc.h"
+#include "debugmalloc.h"
 #include "megallok.h"
 #include "metroGraph.h"
 #include "utvonalterv.h"
@@ -500,6 +500,7 @@ int main() {
                     if (selected == 0) {
                         searchKey.key = malloc(sizeof(char));
                         searchKey.size = 0;
+                        strcpy(searchKey.key, "");
                         megalloSelectorIdx = 0;
                         current_menu = gen_megallo_selector_menu(
                             metro, current_menu, searchKey.key,
@@ -509,6 +510,7 @@ int main() {
                     }
                     if (selected == 1) {
                         searchKey.key = malloc(sizeof(char));
+                        strcpy(searchKey.key, "");
                         searchKey.size = 0;
                         megalloSelectorIdx = 0;
                         current_menu = gen_megallo_selector_menu(
@@ -519,6 +521,7 @@ int main() {
                     }
                     if (selected == 2) {
                         idopont.key = malloc(sizeof(char));
+                        strcpy(idopont.key, "");
                         idopont.size = 0;
                         idopontSelectorMenu.parent = current_menu;
                         current_menu = &idopontSelectorMenu;
