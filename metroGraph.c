@@ -59,25 +59,19 @@ void printGraph(struct MetroGraph* graph) {
         printf("\n");
     }
 }
-// void freeGraph(struct MetroGraph* graph) {
-//     for (int i = 0; i < graph->allomasVSzam; ++i) {
-//         struct El* currentEdge = graph->tomb[i].elek;
-//         while (currentEdge != NULL) {
-//             struct El* nextEdge = currentEdge->kov;
-//             free(currentEdge);
-//             currentEdge = nextEdge;
-//         }
-//         Megallo* currentMegallo = graph->tomb[i].megallok;
-//         while (currentMegallo != NULL) {
-//             Megallo* nextMegallo = currentMegallo->kovetkezo;
-//             free(currentMegallo);
-//             currentMegallo = nextMegallo;
-//         }
-//     }
-
-//     free(graph->tomb);
-//     free(graph);
-// }
+void freeGraph(struct MetroGraph* graph) {
+    for (int i = 0; i < graph->allomasVSzam; i++) {
+        struct El* currentEdge = graph->tomb[i].elek;
+        while (currentEdge != NULL) {
+            struct El* tmp = currentEdge;
+            currentEdge = currentEdge->kov;
+            free(tmp);
+        }
+        free(graph->tomb[i].megallok);
+    }
+    free(graph->tomb);
+    free(graph);
+}
 int* get_allomas_vertex_by_name(struct MetroGraph* graph, char* name) {
     for (int i = 0; i < graph->allomasVSzam; i++) {
         for (int j = 0; j < graph->tomb[i].taroltMegallokSzama; j++) {
@@ -444,7 +438,6 @@ struct Utvonalterv* utvonaltervezes(Metro* metro, char* indulo, char* cel,
                                : *celVertex;
     int* distance = dijkstra(metroGraph, source);
 
-    // printSolution(metroGraph, distance, source, destination);
     Utvonalterv* utvonalterv = dijkstra_to_utvonalterv(
         metroGraph, distance, source, destination, indulasiIdo, metro);
     free(distance);

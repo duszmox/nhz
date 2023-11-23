@@ -375,3 +375,36 @@ struct Vonal *are_megallok_on_same_vonal_string(Metro *metro, char *megallo1,
     }
     return NULL;
 }
+
+void free_megallo_list(MegalloList *megalloList) {
+    Megallo *mozgo = megalloList->megallo;
+    while (mozgo != NULL) {
+        Megallo *mozgo2 = mozgo->kovetkezo;
+        free(mozgo->nev);
+        free(mozgo->ido1);
+        free(mozgo->ido2);
+        free(mozgo);
+        mozgo = mozgo2;
+    }
+    free(megalloList);
+}
+
+void free_metro_network(Metro *metro) {
+    Vonal *mozgo = metro->vonalak;
+    while (mozgo != NULL) {
+        Vonal *mozgo2 = mozgo->kovetkezo;
+        Megallo *mozgo3 = mozgo->megallo;
+        while (mozgo3 != NULL) {
+            Megallo *mozgo4 = mozgo3->kovetkezo;
+            free(mozgo3->nev);
+            free(mozgo3->ido1);
+            free(mozgo3->ido2);
+            free(mozgo3);
+            mozgo3 = mozgo4;
+        }
+        free(mozgo->nev);
+        free(mozgo);
+        mozgo = mozgo2;
+    }
+    free(metro);
+}

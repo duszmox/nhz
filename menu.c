@@ -102,13 +102,15 @@ Menu *gen_utvonalmenu(Utvonalterv *utvonalterv, Menu *parent) {
     sprintf(indulasiIdoText, "Indulás időpontja: (%s)", indulasiIdo);
     allocate_string(&utvonalterv_menu->items[2].text, indulasiIdoText);
     allocate_string(&utvonalterv_menu->items[3].text, "Tervezés");
+    free(indulo);
+    free(cel);
+    free(indulasiIdoText);
     return utvonalterv_menu;
 }
 
 Menu *gen_megallo_selector_menu(Metro *metro, Menu *parent, char *searchKey,
                                 int megalloSelectorIdx) {
-    MegalloList *megallok = malloc(sizeof(MegalloList));
-    *megallok = *megallo_search(metro, searchKey);
+    MegalloList *megallok = megallo_search(metro, searchKey);
     sort_megallo_array(megallok->megallo);
     Menu *megallo_selector_menu = malloc(sizeof(Menu));
     megallo_selector_menu->items = malloc(sizeof(MenuItem) * 4);
@@ -149,9 +151,16 @@ Menu *gen_megallo_selector_menu(Metro *metro, Menu *parent, char *searchKey,
                 allocate_string(&megallo_selector_menu->items[j].text, "");
             }
         }
-
+        // free(megallok);
         return megallo_selector_menu;
     }
+}
+void free_menu(Menu *menu) {
+    for (int i = 0; i < menu->size; i++) {
+        free(menu->items[i].text);
+    }
+    free(menu->items);
+    free(menu);
 }
 void add_char_to_astring(AString *astring, char ch) {
     astring->key =
@@ -162,10 +171,18 @@ void add_char_to_astring(AString *astring, char ch) {
 }
 
 void remove_last_char_from_string(AString *astring) {
-    astring->key = realloc(astring->key,
-                           sizeof(char) * strlen(astring->key) - sizeof(char));
-    astring->key[strlen(astring->key) - 1] = '\0';
-    astring->size--;
+    if (astring->size > 0) {
+        // Find the start of the last character (assuming UTF-8)
+        int i = astring->size - 1;
+        while (i > 0 && (astring->key[i] & 0xC0) == 0x80) {
+            --i;
+        }
+
+        // Resize the string
+        astring->key = realloc(astring->key, sizeof(char) * i + 1);
+        astring->key[i] = '\0';
+        astring->size = i;
+    }
 }
 Menu *utvonalterv_visualizer_menu(Utvonalterv *utvonalterv, Menu *parent) {
     Menu *menu = malloc(sizeof(Menu));
@@ -232,6 +249,9 @@ Menu *utvonalterv_visualizer_menu(Utvonalterv *utvonalterv, Menu *parent) {
             i++;
         }
         mozgo = mozgo->kovetkezo;
+        // free(indulo);
+        // free(cel);
+        // free(interText);
     }
     allocate_string(&menu->items[i].text, "");
     menu->selected = size;
@@ -373,7 +393,8 @@ int main() {
             switch (current_menu->type) {
                 case MEGALLO_SELECTOR:
                     mvprintw(current_menu->size + headerSize + 1, 0,
-                             "Keresés: %s", searchKey.key);
+                             "Keresés %lu: %s ", strlen(searchKey.key),
+                             searchKey.key);
                     break;
                 case IDOPONT_SELECTOR:
                     mvprintw(current_menu->size + headerSize, 0,
@@ -399,9 +420,11 @@ int main() {
                 } else if (megalloSelectorIdx != 0 && selected < 4) {
                     current_menu->selected--;
                     megalloSelectorIdx--;
+                    Menu *tmp = current_menu;
                     current_menu = gen_megallo_selector_menu(
                         metro, current_menu->parent, searchKey.key,
                         megalloSelectorIdx);
+                    free_menu(tmp);
                 } else {
                     decrease_selected(&selected, current_menu->size + 1);
                 }
@@ -427,17 +450,21 @@ int main() {
                            selected != 4) {
                     current_menu->selected++;
                     megalloSelectorIdx++;
+                    Menu *tmp = current_menu;
                     current_menu = gen_megallo_selector_menu(
                         metro, current_menu->parent, searchKey.key,
                         megalloSelectorIdx);
+                    for (int i = 0; i < tmp->size; i++) {
+                        free(tmp->items[i].text);
+                    }
+                    free(tmp->items);
+                    free(tmp);
                 } else {
                     increase_selected(&selected, current_menu->size + 1);
                 }
             } else {
                 increase_selected(&selected, current_menu->size + 1);
             }
-        } else if (ch == 'q') {
-            break;
         } else if (ch == '\n') {
             if (selected == current_menu->size) {
                 if (current_menu->parent != NULL) {
@@ -448,8 +475,10 @@ int main() {
                             utvonalterv.indulasiIdo = malloc(sizeof(Idopont));
                             *utvonalterv.indulasiIdo =
                                 string_to_idopont(idopont.key);
+                            Menu *tmp = current_menu->parent;
                             current_menu = gen_utvonalmenu(
                                 &utvonalterv, current_menu->parent->parent);
+                            free_menu(tmp);
                             selected = 0;
                             idopont.key = malloc(sizeof(char));
                             idopont.size = 0;
@@ -458,13 +487,32 @@ int main() {
                         }
                     }
                     if (current_menu->type == UTVALTERV_MENU) {
+                        free(utvonalterv.indulasiIdo);
                         utvonalterv =
                             (Utvonalterv){NULL, NULL, NULL, NULL, 0, NULL};
+                        free(searchKey.key);
+                        searchKey.key = NULL;
+                        searchKey.size = 0;
+                        free(idopont.key);
+                        idopont.key = NULL;
+                        idopont.size = 0;
                     }
-                    current_menu = current_menu->parent;
+                    Menu *parent = current_menu->parent;
+                    if (UTVALTERV_MENU == current_menu->type ||
+                        MEGALLO_SELECTOR == current_menu->type ||
+                        IDOPONT_SELECTOR == current_menu->type ||
+                        UTVONALTERV_VISUALIZER == current_menu->type) {
+                        free_menu(current_menu);
+                    }
+                    current_menu = parent;
                     selected = 0;
                     selectorType = NOT_SELECTED;
                 } else {
+                    if (utvonaltervAlloced) {
+                        free(mainMenu.items[1].text);
+                        utvonaltervAlloced = false;
+                    }
+                    // free_metro_network(metro);
                     break;
                 }
             } else {
@@ -491,6 +539,7 @@ int main() {
                 } else if (current_menu->type == MENETREND_MENU2) {
                     if (selected == 0) {
                         remove("menetrend.csv");
+                        // free_metro_network(metro);
                         metro = NULL;
                     }
                     if (selected == 1) {
@@ -498,7 +547,9 @@ int main() {
                     }
                 } else if (current_menu->type == UTVALTERV_MENU) {
                     if (selected == 0) {
-                        searchKey.key = malloc(sizeof(char));
+                        if (searchKey.key == NULL) {
+                            searchKey.key = malloc(sizeof(char));
+                        }
                         searchKey.size = 0;
                         strcpy(searchKey.key, "");
                         megalloSelectorIdx = 0;
@@ -509,8 +560,9 @@ int main() {
                         selected = 0;
                     }
                     if (selected == 1) {
-                        searchKey.key = malloc(sizeof(char));
-                        strcpy(searchKey.key, "");
+                        if (searchKey.key == NULL) {
+                            searchKey.key = malloc(sizeof(char));
+                        }
                         searchKey.size = 0;
                         megalloSelectorIdx = 0;
                         current_menu = gen_megallo_selector_menu(
@@ -520,9 +572,11 @@ int main() {
                         selected = 0;
                     }
                     if (selected == 2) {
-                        idopont.key = malloc(sizeof(char));
+                        if (idopont.key == NULL) {
+                            idopont.key = malloc(sizeof(char));
+                            idopont.size = 0;
+                        }
                         strcpy(idopont.key, "");
-                        idopont.size = 0;
                         idopontSelectorMenu.parent = current_menu;
                         current_menu = &idopontSelectorMenu;
                         selected = 0;
@@ -567,8 +621,10 @@ int main() {
                     }
                     selected = 0;
                     megalloSelectorIdx = 0;
-                    current_menu = gen_utvonalmenu(
-                        &utvonalterv, current_menu->parent->parent);
+                    Menu *parent = current_menu->parent->parent;
+                    free_menu(current_menu->parent);
+                    free_menu(current_menu);
+                    current_menu = gen_utvonalmenu(&utvonalterv, parent);
                     selectorType = NOT_SELECTED;
                 }
             }
@@ -580,9 +636,11 @@ int main() {
                             remove_last_char_from_string(&searchKey);
                             megalloSelectorIdx = 0;
                             selected = 0;
+                            Menu *tmp = current_menu;
                             current_menu = gen_megallo_selector_menu(
                                 metro, current_menu->parent, searchKey.key,
                                 megalloSelectorIdx);
+                            free_menu(tmp);
                         }
                         break;
                     case IDOPONT_SELECTOR:
@@ -600,9 +658,11 @@ int main() {
                         add_char_to_astring(&searchKey, ch);
                         megalloSelectorIdx = 0;
                         selected = 0;
+                        Menu *tmp = current_menu;
                         current_menu = gen_megallo_selector_menu(
                             metro, current_menu->parent, searchKey.key,
                             megalloSelectorIdx);
+                        free_menu(tmp);
                         break;
                     case IDOPONT_SELECTOR:
                         switch (idopont.size) {
