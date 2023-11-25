@@ -64,4 +64,5 @@ struct Megallo *find_megallo_for_string(Metro *metro, char *megalloNev);
 void free_utvonalterv(Utvonalterv *utvonalterv);
 void free_vonals(Vonal *vonalak);
 void free_atszallasi_megallok(AtszallasiMegallo **atszallasiMegallok, int size);
+Megallo *is_string_on_megallo_vonal(Megallo *megallo, char *megalloNev);
 #endif

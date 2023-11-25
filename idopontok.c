@@ -7,21 +7,6 @@
 
 #include "debugmalloc.h"
 
-int idopontcmp(Idopont idopont1, Idopont idopont2) {
-    if (idopont1.ora < idopont2.ora) {
-        return -1;
-    } else if (idopont1.ora > idopont2.ora) {
-        return 1;
-    } else {
-        if (idopont1.perc < idopont2.perc) {
-            return -1;
-        } else if (idopont1.perc > idopont2.perc) {
-            return 1;
-        } else {
-            return 0;
-        }
-    }
-}
 Idopont idopont_osszead(Idopont idopont1, Idopont idopont2) {
     Idopont idopont = idopont1;
     idopont.ora += idopont2.ora;

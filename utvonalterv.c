@@ -138,6 +138,25 @@ bool is_on_vonal(Vonal *vonal, char *megallo) {
     }
     return false;
 }
+
+Megallo *is_string_on_megallo_vonal(Megallo *megallo, char *megalloNev) {
+    Megallo *mozgo = megallo;
+    while (mozgo != NULL) {
+        if (strcmp(mozgo->nev, megalloNev) == 0) {
+            return mozgo;
+        }
+        mozgo = mozgo->kovetkezo;
+    }
+    mozgo = megallo;
+    while (mozgo != NULL) {
+        if (strcmp(mozgo->nev, megalloNev) == 0) {
+            return mozgo;
+        }
+        mozgo = mozgo->elozo;
+    }
+    return NULL;
+}
+
 int *megallo_distance(Vonal *vonal, char *megallo1, char *megallo2) {
     if (!is_on_vonal(vonal, megallo1) || !is_on_vonal(vonal, megallo2)) {
         return NULL;

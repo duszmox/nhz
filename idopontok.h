@@ -7,7 +7,6 @@ typedef struct Idopont {
 } Idopont;
 typedef enum idopont_tipus { ORA, PERC } idopont_tipus;
 
-int idopontcmp(Idopont idopont1, Idopont idopont2);
 Idopont idopont_osszead(Idopont idopont1, Idopont idopont2);
 char *idopont_to_string(Idopont idopont);
 Idopont string_to_idopont(char *s);
