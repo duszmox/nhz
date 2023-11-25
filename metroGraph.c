@@ -318,6 +318,7 @@ struct Utvonalterv* dijkstra_to_utvonalterv(struct MetroGraph* graph,
             mozgo->kovetkezo = uj;
         }
         free(megalloTav);
+        free(tmpIndulasiIdo);
     }
     free(path);
     return tripPlan;
@@ -338,11 +339,9 @@ struct Utvonalterv* utvonaltervezes(Metro* metro, char* indulo, char* cel,
             printf("Nem sikerult atszallasi megallokat szerezni!\n");
             return NULL;
         }
-
         atszallasiMegallok = (AtszallasiMegallo**)realloc(
-            atszallasiMegallok, sizeof(AtszallasiMegallo) * (vonalakSzama + 1));
-        atszallasiMegallok[vonalakSzama] = uj;
-        vonalakSzama++;
+            atszallasiMegallok, sizeof(AtszallasiMegallo) * (++vonalakSzama));
+        atszallasiMegallok[vonalakSzama - 1] = uj;
         mozgo = mozgo->kovetkezo;
     }
     for (int i = 0; i < vonalakSzama; i++) {
@@ -374,8 +373,6 @@ struct Utvonalterv* utvonaltervezes(Metro* metro, char* indulo, char* cel,
     if (induloVertex == NULL) {
         induloVan = true;
         resize_metro_graph(metroGraph);
-        metroGraph->tomb[metroGraph->allomasVSzam - 1].megallok[0] =
-            (Megallo*)malloc(sizeof(Megallo));
         Vonal* induloVonal = find_vonal_for_megallo_string(metro, indulo);
         if (induloVonal == NULL) {
             printf("Nem sikerult vonalat szerezni!\n");
@@ -397,8 +394,6 @@ struct Utvonalterv* utvonaltervezes(Metro* metro, char* indulo, char* cel,
     if (celVertex == NULL) {
         celVan = true;
         resize_metro_graph(metroGraph);
-        metroGraph->tomb[metroGraph->allomasVSzam - 1].megallok[0] =
-            (Megallo*)malloc(sizeof(Megallo));
         Vonal* celVonal = find_vonal_for_megallo_string(metro, cel);
         Megallo* celMegallo = celVonal->megallo;
         while (celMegallo != NULL) {
@@ -430,7 +425,6 @@ struct Utvonalterv* utvonaltervezes(Metro* metro, char* indulo, char* cel,
             }
         }
     }
-    printGraph(metroGraph);
     int source = metroGraph->allomasVSzam - fixStations == 2
                      ? metroGraph->allomasVSzam - 2
                  : induloVan ? metroGraph->allomasVSzam - 1
@@ -458,36 +452,45 @@ struct Utvonalterv* utvonaltervezes(Metro* metro, char* indulo, char* cel,
 //     Utvonalterv* mozgo = utvonalterv;
 //     int i = 0;
 //     while (mozgo != NULL) {
+//         char* induloIdopont = idopont_to_string(*mozgo->indulasiIdo);
 //         char* indulo = malloc(sizeof(char) * strlen(mozgo->indulo->nev) + 1 +
 //                               strlen("O-()  - ") + strlen(mozgo->vonal->nev)
-//                               +
-//                               strlen(idopont_to_string(*mozgo->indulasiIdo)));
+//                               + strlen(induloIdopont));
 //         sprintf(indulo, "O-(%s) - %s %s", mozgo->vonal->nev,
 //         mozgo->indulo->nev,
-//                 idopont_to_string(*mozgo->indulasiIdo));
+//                 induloIdopont);
+//         free(induloIdopont);
+//         // allocate_string(&menu->items[i].text, indulo);
 //         printf("%s\n", indulo);
 //         i++;
+//         // allocate_string(&menu->items[i].text, "|");
 //         printf("|\n");
 //         i++;
-//         int megalloTav = abs(*megallo_distance(mozgo->vonal,
-//         mozgo->indulo->nev,
-//                                                mozgo->cel->nev));
+//         int* megalloTav =
+//             megallo_distance(mozgo->vonal, mozgo->indulo->nev,
+//             mozgo->cel->nev);
 //         int idoKulonbseg =
 //             ido_kulonbseg_perc(*mozgo->indulasiIdo, *mozgo->erkezesiIdo);
 //         char* interText =
-//             malloc(sizeof(char) * log10(megalloTav) + log10(idoKulonbseg) +
-//                    strlen("|--  megálló -  perc") + 1);
-//         sprintf(interText, "|-- %d megálló - %d perc", megalloTav,
+//             malloc(sizeof(char) * (floor(log10(abs(*megalloTav))) + 1 +
+//                                    floor(log10(abs(idoKulonbseg))) + 1 +
+//                                    strlen("|--  megálló -  perc") + 1));
+//         sprintf(interText, "|-- %d megálló - %d perc", abs(*megalloTav),
 //                 idoKulonbseg);
+//         // allocate_string(&menu->items[i].text, interText);
 //         printf("%s\n", interText);
 //         i++;
+//         // allocate_string(&menu->items[i].text, "|");
 //         printf("|\n");
 //         i++;
+//         char* celIdopont = idopont_to_string(*mozgo->erkezesiIdo);
 //         char* cel = malloc(sizeof(char) * strlen(mozgo->cel->nev) + 1 +
 //                            strlen("O-()  - ") + strlen(mozgo->vonal->nev) +
-//                            strlen(idopont_to_string(*mozgo->erkezesiIdo)));
+//                            strlen(celIdopont));
 //         sprintf(cel, "O-(%s) - %s %s", mozgo->vonal->nev, mozgo->cel->nev,
-//                 idopont_to_string(*mozgo->erkezesiIdo));
+//                 celIdopont);
+//         free(celIdopont);
+//         // allocate_string(&menu->items[i].text, cel);
 //         printf("%s\n", cel);
 //         i++;
 //         if (mozgo->kovetkezo != NULL) {
@@ -502,6 +505,10 @@ struct Utvonalterv* utvonaltervezes(Metro* metro, char* indulo, char* cel,
 //             i++;
 //         }
 //         mozgo = mozgo->kovetkezo;
+//         free(indulo);
+//         free(cel);
+//         free(megalloTav);
+//         free(interText);
 //     }
 //     free_metro_network(metro);
 //     free_utvonalterv(utvonalterv);

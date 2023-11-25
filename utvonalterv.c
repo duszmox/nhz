@@ -203,6 +203,7 @@ MegalloList *megallo_search(Metro *metro, char *megallo_chunk) {
                 uj->elozo = NULL;
                 if (megallokSzama == 0) {
                     *megallok = *uj;
+                    free(uj);
                 } else {
                     Megallo *mozgo2 = megallok;
                     while (mozgo2->kovetkezo != NULL)
@@ -323,9 +324,11 @@ AtszallasiMegallo *atszallasi_megallok_on_vonal(Metro *Metro, Vonal *vonal) {
             uj->vonal = malloc(sizeof(Vonal));
             *uj->vonal = *vonal;
             uj->kovetkezo = NULL;
+            uj->vonal->elozo = NULL;
+            uj->vonal->kovetkezo = NULL;
             if (atszallasiMegallok->megallo == NULL) {
                 *atszallasiMegallok = *uj;
-                // free(uj);
+                free(uj);
             } else {
                 AtszallasiMegallo *mozgo2 = atszallasiMegallok;
                 while (mozgo2->kovetkezo != NULL) {
@@ -333,8 +336,6 @@ AtszallasiMegallo *atszallasi_megallok_on_vonal(Metro *Metro, Vonal *vonal) {
                 }
                 mozgo2->kovetkezo = uj;
             }
-            uj->vonal->elozo = NULL;
-            uj->vonal->kovetkezo = NULL;
         }
         mozgo = mozgo->kovetkezo;
         free_vonals(vonalakForMegallo);
@@ -426,6 +427,21 @@ void free_metro_network(Metro *metro) {
     free(metro);
 }
 
+bool is_megallo_p_on_metro(Metro *metro, Megallo *megallo) {
+    Vonal *mozgo = metro->vonalak;
+    while (mozgo != NULL) {
+        Megallo *mozgo2 = mozgo->megallo;
+        while (mozgo2 != NULL) {
+            if (megallo == mozgo2) {
+                return true;
+            }
+            mozgo2 = mozgo2->kovetkezo;
+        }
+        mozgo = mozgo->kovetkezo;
+    }
+    return false;
+}
+
 void free_utvonalterv(Utvonalterv *utvonalterv) {
     Utvonalterv *mozgo = utvonalterv;
     while (mozgo != NULL) {
@@ -457,4 +473,5 @@ void free_atszallasi_megallok(AtszallasiMegallo **atszallasiMegallok,
             mozgo = mozgo2;
         }
     }
+    free(atszallasiMegallok);
 }

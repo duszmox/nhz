@@ -123,8 +123,7 @@ Menu *gen_megallo_selector_menu(Metro *metro, Menu *parent, char *searchKey,
     megallo_selector_menu->type = MEGALLO_SELECTOR;
     if (megallok->size == 0) {
         allocate_string(&megallo_selector_menu->items[0].text, "Nincs találat");
-        for (int i = 1; i <= 3; i++)
-            allocate_string(&megallo_selector_menu->items[i].text, "");
+        free_megallo_list(megallok);
         return megallo_selector_menu;
     } else {
         Megallo *mozgo = megallok->megallo;
@@ -147,11 +146,6 @@ Menu *gen_megallo_selector_menu(Metro *metro, Menu *parent, char *searchKey,
             mozgo = mozgo->kovetkezo;
             i++;
         }
-        if (i < 4) {
-            for (int j = i; j < 4; j++) {
-                allocate_string(&megallo_selector_menu->items[j].text, "");
-            }
-        }
         free_megallo_list(megallok);
         return megallo_selector_menu;
     }
@@ -164,7 +158,7 @@ void free_menu(Menu *menu) {
     free(menu);
 }
 void add_char_to_astring(AString *astring, char ch) {
-    astring->key = realloc(astring->key, sizeof(char) * (astring->size + 1));
+    astring->key = realloc(astring->key, sizeof(char) * (astring->size + 2));
     astring->key[astring->size] = ch;
     astring->key[astring->size + 1] = '\0';
     astring->size++;
@@ -187,9 +181,10 @@ void remove_last_char_from_string(AString *astring) {
 void clear_astring(AString *astring) {
     free(astring->key);
     astring->key = malloc(sizeof(char));
-    astring->key[0] = '\0';
+    strcpy(astring->key, "");
     astring->size = 0;
 }
+
 Menu *utvonalterv_visualizer_menu(Utvonalterv *utvonalterv, Menu *parent) {
     Menu *menu = malloc(sizeof(Menu));
     menu->type = UTVONALTERV_VISUALIZER;
@@ -235,7 +230,7 @@ Menu *utvonalterv_visualizer_menu(Utvonalterv *utvonalterv, Menu *parent) {
         char *interText =
             malloc(sizeof(char) * (floor(log10(abs(*megalloTav))) + 1 +
                                    floor(log10(abs(idoKulonbseg))) + 1 +
-                                   strlen("|--  megálló -  perc")));
+                                   strlen("|--  megálló -  perc") + 1));
         sprintf(interText, "|-- %d megálló - %d perc", abs(*megalloTav),
                 idoKulonbseg);
         allocate_string(&menu->items[i].text, interText);
@@ -263,7 +258,7 @@ Menu *utvonalterv_visualizer_menu(Utvonalterv *utvonalterv, Menu *parent) {
         free(indulo);
         free(cel);
         free(megalloTav);
-        // free(interText);
+        free(interText);
     }
     allocate_string(&menu->items[i].text, "");
     menu->selected = size;
@@ -492,8 +487,7 @@ int main() {
                                 utvonalterv, current_menu->parent->parent);
                             free_menu(tmp);
                             selected = 0;
-                            idopont.key = malloc(sizeof(char));
-                            idopont.size = 0;
+                            clear_astring(&idopont);
                             current_menu->selected = 0;
                             continue;
                         } else {
@@ -510,12 +504,8 @@ int main() {
                         utvonalterv = malloc(sizeof(Utvonalterv));
                         *utvonalterv =
                             (Utvonalterv){NULL, NULL, NULL, NULL, 0, NULL};
-                        free(searchKey.key);
-                        searchKey.key = NULL;
-                        searchKey.size = 0;
-                        free(idopont.key);
-                        idopont.key = NULL;
-                        idopont.size = 0;
+                        clear_astring(&searchKey);
+                        clear_astring(&idopont);
                         if (metro != NULL) free_metro_network(metro);
                         metro = NULL;
                     }
@@ -533,7 +523,9 @@ int main() {
                         free(mainMenu.items[1].text);
                         utvonaltervAlloced = false;
                     }
-                    free(utvonalterv);
+                    free_utvonalterv(utvonalterv);
+                    free(searchKey.key);
+                    free(idopont.key);
                     if (metro != NULL) free_metro_network(metro);
                     break;
                 }
@@ -549,7 +541,7 @@ int main() {
                                 gen_utvonalmenu(utvonalterv, &mainMenu);
                             selected = 0;
                             metro = menetrend_beolvas();
-                            free(utvonalterv);
+                            free_utvonalterv(utvonalterv);
                             utvonalterv = malloc(sizeof(Utvonalterv));
                             *utvonalterv = (Utvonalterv){NULL, NULL, NULL,
                                                          NULL, NULL, NULL};
@@ -605,6 +597,7 @@ int main() {
                             current_menu = utvonalterv_visualizer_menu(
                                 utvonalterv2, current_menu);
                             selected = current_menu->size;
+                            free_utvonalterv(utvonalterv2);
                         }
                     }
 
@@ -700,9 +693,7 @@ int main() {
                                 }
                                 break;
                             case 2:
-                                if (ch == ':') {
-                                    add_char_to_astring(&idopont, ch);
-                                }
+                                add_char_to_astring(&idopont, ':');
                                 break;
                             case 3:
                                 if (ch >= '0' && ch <= '5') {
