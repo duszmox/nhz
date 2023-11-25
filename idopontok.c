@@ -55,6 +55,10 @@ char *bovit_nullaval(Idopont idopont, idopont_tipus it) {
 }
 
 char *idopont_to_string(Idopont idopont) {
+    if (idopont.ora < 0 || idopont.ora > 23 || idopont.perc < 0 ||
+        idopont.perc > 59) {
+        return NULL;
+    }
     char *ora = bovit_nullaval(idopont, ORA);
     char *perc = bovit_nullaval(idopont, PERC);
     char *s = (char *)malloc(5 * sizeof(char) + 1);

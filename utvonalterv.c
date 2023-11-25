@@ -342,9 +342,11 @@ int count_utvonal_distance(Metro *metro, Utvonalterv *utvonalterv) {
     int tav = 0;
     Utvonalterv *mozgo = utvonalterv;
     while (mozgo != NULL) {
-        tav += *megallo_distance(
+        int *distance = megallo_distance(
             find_vonal_for_megallo_string(metro, mozgo->indulo->nev),
             mozgo->indulo->nev, mozgo->cel->nev);
+        tav += *distance;
+        free(distance);
         mozgo = mozgo->kovetkezo;
     }
     return tav;
@@ -367,6 +369,21 @@ struct Vonal *are_megallok_on_same_vonal_string(Metro *metro, char *megallo1,
                     }
                     mozgo3 = mozgo3->kovetkezo;
                 }
+            }
+            mozgo2 = mozgo2->kovetkezo;
+        }
+        mozgo = mozgo->kovetkezo;
+    }
+    return NULL;
+}
+
+struct Megallo *find_megallo_for_string(Metro *metro, char *megalloNev) {
+    Vonal *mozgo = metro->vonalak;
+    while (mozgo != NULL) {
+        Megallo *mozgo2 = mozgo->megallo;
+        while (mozgo2 != NULL) {
+            if (strcmp(mozgo2->nev, megalloNev) == 0) {
+                return mozgo2;
             }
             mozgo2 = mozgo2->kovetkezo;
         }

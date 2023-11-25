@@ -38,13 +38,6 @@ void addEdge(struct MetroGraph* graph, int src, int dest, int weight) {
     ujEl->suly = weight;
     ujEl->kov = graph->tomb[src].elek;
     graph->tomb[src].elek = ujEl;
-
-    // For undirected graphs, you may also want to add the reverse edge
-    // newEdge = (struct Edge*)malloc(sizeof(struct Edge));
-    // newEdge->destination = src;
-    // newEdge->weight = weight;
-    // newEdge->next = graph->array[dest].edges;
-    // graph->array[dest].edges = newEdge;
 }
 void printGraph(struct MetroGraph* graph) {
     for (int i = 0; i < graph->allomasVSzam; ++i) {
@@ -324,6 +317,7 @@ struct Utvonalterv* dijkstra_to_utvonalterv(struct MetroGraph* graph,
             }
             mozgo->kovetkezo = uj;
         }
+        free(megalloTav);
     }
     free(path);
     return tripPlan;
@@ -424,9 +418,10 @@ struct Utvonalterv* utvonaltervezes(Metro* metro, char* indulo, char* cel,
             Vonal* kozosVonal = are_megallok_on_same_vonal_string(
                 metro, induloVonalNev, celVonalNev);
             if (kozosVonal != NULL) {
-                addEdge(metroGraph, i, j,
-                        abs(*megallo_distance(kozosVonal, induloVonalNev,
-                                              celVonalNev)));
+                int* megalloTav =
+                    megallo_distance(kozosVonal, induloVonalNev, celVonalNev);
+                addEdge(metroGraph, i, j, abs(*megalloTav));
+                free(megalloTav);
             }
         }
     }

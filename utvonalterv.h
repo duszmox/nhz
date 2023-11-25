@@ -60,4 +60,5 @@ struct Vonal *are_megallok_on_same_vonal_string(Metro *metro, char *megallo1,
                                                 char *megallo2);
 void free_megallo_list(MegalloList *megalloList);
 void free_metro_network(Metro *metro);
+struct Megallo *find_megallo_for_string(Metro *metro, char *megalloNev);
 #endif
