@@ -203,6 +203,7 @@ MegalloList *megallo_search(Metro *metro, char *megallo_chunk) {
                 uj->elozo = NULL;
                 if (megallokSzama == 0) {
                     *megallok = *uj;
+                    free(uj);
                 } else {
                     Megallo *mozgo2 = megallok;
                     while (mozgo2->kovetkezo != NULL)
@@ -310,9 +311,10 @@ AtszallasiMegallo *atszallasi_megallok_on_vonal(Metro *Metro, Vonal *vonal) {
         Vonal *vonalakForMegallo =
             find_vonal_for_megallo_string(Metro, mozgo->nev);
         int i = 0;
-        while (vonalakForMegallo != NULL) {
+        Vonal *vonalakForMegallo2 = vonalakForMegallo;
+        while (vonalakForMegallo2 != NULL) {
             i++;
-            vonalakForMegallo = vonalakForMegallo->kovetkezo;
+            vonalakForMegallo2 = vonalakForMegallo2->kovetkezo;
         }
         if (i > 1) {
             AtszallasiMegallo *uj = malloc(sizeof(AtszallasiMegallo));
@@ -322,8 +324,11 @@ AtszallasiMegallo *atszallasi_megallok_on_vonal(Metro *Metro, Vonal *vonal) {
             uj->vonal = malloc(sizeof(Vonal));
             *uj->vonal = *vonal;
             uj->kovetkezo = NULL;
+            uj->vonal->elozo = NULL;
+            uj->vonal->kovetkezo = NULL;
             if (atszallasiMegallok->megallo == NULL) {
                 *atszallasiMegallok = *uj;
+                free(uj);
             } else {
                 AtszallasiMegallo *mozgo2 = atszallasiMegallok;
                 while (mozgo2->kovetkezo != NULL) {
@@ -331,10 +336,9 @@ AtszallasiMegallo *atszallasi_megallok_on_vonal(Metro *Metro, Vonal *vonal) {
                 }
                 mozgo2->kovetkezo = uj;
             }
-            uj->vonal->elozo = NULL;
-            uj->vonal->kovetkezo = NULL;
         }
         mozgo = mozgo->kovetkezo;
+        free_vonals(vonalakForMegallo);
     }
     return atszallasiMegallok;
 }
@@ -342,11 +346,13 @@ int count_utvonal_distance(Metro *metro, Utvonalterv *utvonalterv) {
     int tav = 0;
     Utvonalterv *mozgo = utvonalterv;
     while (mozgo != NULL) {
-        int *distance = megallo_distance(
-            find_vonal_for_megallo_string(metro, mozgo->indulo->nev),
-            mozgo->indulo->nev, mozgo->cel->nev);
+        Vonal *vonalakForMegallo =
+            find_vonal_for_megallo_string(metro, mozgo->indulo->nev);
+        int *distance = megallo_distance(vonalakForMegallo, mozgo->indulo->nev,
+                                         mozgo->cel->nev);
         tav += *distance;
         free(distance);
+        free(vonalakForMegallo);
         mozgo = mozgo->kovetkezo;
     }
     return tav;
@@ -361,11 +367,7 @@ struct Vonal *are_megallok_on_same_vonal_string(Metro *metro, char *megallo1,
                 Megallo *mozgo3 = mozgo->megallo;
                 while (mozgo3 != NULL) {
                     if (strcmp(mozgo3->nev, megallo2) == 0) {
-                        Vonal *uj = malloc(sizeof(Vonal));
-                        *uj = *mozgo;
-                        uj->elozo = NULL;
-                        uj->kovetkezo = NULL;
-                        return uj;
+                        return mozgo;
                     }
                     mozgo3 = mozgo3->kovetkezo;
                 }
@@ -423,4 +425,53 @@ void free_metro_network(Metro *metro) {
         mozgo = mozgo2;
     }
     free(metro);
+}
+
+bool is_megallo_p_on_metro(Metro *metro, Megallo *megallo) {
+    Vonal *mozgo = metro->vonalak;
+    while (mozgo != NULL) {
+        Megallo *mozgo2 = mozgo->megallo;
+        while (mozgo2 != NULL) {
+            if (megallo == mozgo2) {
+                return true;
+            }
+            mozgo2 = mozgo2->kovetkezo;
+        }
+        mozgo = mozgo->kovetkezo;
+    }
+    return false;
+}
+
+void free_utvonalterv(Utvonalterv *utvonalterv) {
+    Utvonalterv *mozgo = utvonalterv;
+    while (mozgo != NULL) {
+        Utvonalterv *mozgo2 = mozgo->kovetkezo;
+        free(mozgo->indulasiIdo);
+        free(mozgo->erkezesiIdo);
+        free(mozgo);
+        mozgo = mozgo2;
+    }
+}
+void free_vonals(Vonal *vonal) {
+    Vonal *mozgo = vonal;
+    while (mozgo != NULL) {
+        Vonal *mozgo2 = mozgo->kovetkezo;
+        free(mozgo);
+        mozgo = mozgo2;
+    }
+}
+
+void free_atszallasi_megallok(AtszallasiMegallo **atszallasiMegallok,
+                              int size) {
+    for (int i = 0; i < size; i++) {
+        AtszallasiMegallo *mozgo = atszallasiMegallok[i];
+        while (mozgo != NULL) {
+            AtszallasiMegallo *mozgo2 = mozgo->kovetkezo;
+            free(mozgo->megallo);
+            free(mozgo->vonal);
+            free(mozgo);
+            mozgo = mozgo2;
+        }
+    }
+    free(atszallasiMegallok);
 }
