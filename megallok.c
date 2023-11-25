@@ -5,6 +5,7 @@
 #include <string.h>
 #include <time.h>
 
+#include "debugmalloc.h"
 #include "idopontok.h"
 
 MetroGen *vonalak_beolvas() {

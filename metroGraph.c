@@ -8,8 +8,10 @@
 #include <string.h>
 #include <time.h>
 
+#include "debugmalloc.h"
 #include "idopontok.h"
 #include "utvonalterv.h"
+
 int* dijkstra(struct MetroGraph* graph, int source);
 int minDistance(int* distance, bool* visited, int V);
 
@@ -312,6 +314,7 @@ struct Utvonalterv* dijkstra_to_utvonalterv(struct MetroGraph* graph,
             *uj->indulasiIdo = uj->indulo->ido2[indulasiIdoIndex];
             *uj->erkezesiIdo = uj->cel->ido2[indulasiIdoIndex];
         }
+        uj->kovetkezo = NULL;
         if (tripPlan == NULL) {
             tripPlan = uj;
         } else {

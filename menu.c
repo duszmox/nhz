@@ -163,8 +163,7 @@ void free_menu(Menu *menu) {
     free(menu);
 }
 void add_char_to_astring(AString *astring, char ch) {
-    astring->key =
-        realloc(astring->key, sizeof(char) * astring->size + sizeof(char) + 1);
+    astring->key = realloc(astring->key, sizeof(char) * (astring->size + 1));
     astring->key[astring->size] = ch;
     astring->key[astring->size + 1] = '\0';
     astring->size++;
@@ -225,8 +224,9 @@ Menu *utvonalterv_visualizer_menu(Utvonalterv *utvonalterv, Menu *parent) {
         int idoKulonbseg =
             ido_kulonbseg_perc(*mozgo->indulasiIdo, *mozgo->erkezesiIdo);
         char *interText =
-            malloc(sizeof(char) * log10(megalloTav) + log10(idoKulonbseg) +
-                   strlen("|--  megálló -  perc") + 1);
+            malloc(sizeof(char) * (floor(log10(abs(megalloTav))) + 1 +
+                                   floor(log10(abs(idoKulonbseg))) + 1 +
+                                   strlen("|--  megálló -  perc")));
         sprintf(interText, "|-- %d megálló - %d perc", megalloTav,
                 idoKulonbseg);
         allocate_string(&menu->items[i].text, interText);
@@ -249,8 +249,8 @@ Menu *utvonalterv_visualizer_menu(Utvonalterv *utvonalterv, Menu *parent) {
             i++;
         }
         mozgo = mozgo->kovetkezo;
-        // free(indulo);
-        // free(cel);
+        free(indulo);
+        free(cel);
         // free(interText);
     }
     allocate_string(&menu->items[i].text, "");
@@ -512,7 +512,7 @@ int main() {
                         free(mainMenu.items[1].text);
                         utvonaltervAlloced = false;
                     }
-                    // free_metro_network(metro);
+                    if (metro != NULL) free_metro_network(metro);
                     break;
                 }
             } else {
@@ -539,7 +539,7 @@ int main() {
                 } else if (current_menu->type == MENETREND_MENU2) {
                     if (selected == 0) {
                         remove("menetrend.csv");
-                        // free_metro_network(metro);
+                        if (metro != NULL) free_metro_network(metro);
                         metro = NULL;
                     }
                     if (selected == 1) {
@@ -574,8 +574,8 @@ int main() {
                     if (selected == 2) {
                         if (idopont.key == NULL) {
                             idopont.key = malloc(sizeof(char));
-                            idopont.size = 0;
                         }
+                        idopont.size = 0;
                         strcpy(idopont.key, "");
                         idopontSelectorMenu.parent = current_menu;
                         current_menu = &idopontSelectorMenu;

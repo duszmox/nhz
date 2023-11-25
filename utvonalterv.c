@@ -7,6 +7,7 @@
 #include <string.h>
 #include <time.h>
 
+#include "debugmalloc.h"
 #include "idopontok.h"
 
 Metro *menetrend_beolvas() {
@@ -36,14 +37,13 @@ Metro *menetrend_beolvas() {
                 buffer_size += sizeof(ch);
                 buffer = realloc(buffer, buffer_size);
             }
-            buffer[buffer_index] = '\0';  // Null-terminate the line
+            buffer[buffer_index] = '\0';
             buffer_index = 0;
 
             if (strcmp(buffer, "") == 0) {
                 if (round == 1) {
                     Vonal **tmp = &vonal;
                     metro->vonalakSzama++;
-
                     vonal->kovetkezo = malloc(sizeof(Vonal));
                     *vonal->kovetkezo = (Vonal){NULL, NULL, 0, NULL, *tmp};
                     vonal = vonal->kovetkezo;
@@ -56,8 +56,8 @@ Metro *menetrend_beolvas() {
                 } else {
                     round++;
                     megallo = megallo->elozo;
+                    free(megallo->kovetkezo);
                     megallo->kovetkezo = NULL;
-                    // megallo = vonal->megallo;
                     continue;
                 }
             }
@@ -82,12 +82,9 @@ Metro *menetrend_beolvas() {
             }
             if (round == 0) {
                 strtok(NULL, ",");
-                // printf("%s\n", asd);
                 char *megalloNev = strtok(NULL, ",");
-                // printf("%s\n", megalloNev);
                 megallo->nev = malloc(sizeof(char) * strlen(megalloNev) + 1);
                 strcpy(megallo->nev, megalloNev);
-                // printf("%s\n", megallo->nev);
                 megallo->ido1 = ido;
                 megallo->ido1Hossz = numberOfCommas;
             } else {
@@ -95,7 +92,6 @@ Metro *menetrend_beolvas() {
                 strtok(NULL, ",");
                 megallo->ido2 = ido;
                 megallo->ido2Hossz = numberOfCommas;
-                // printf("%s\n", megallo->nev);
             }
             int i = 0;
             while (i < numberOfCommas) {
@@ -120,10 +116,11 @@ Metro *menetrend_beolvas() {
                 buffer = realloc(buffer, buffer_size);
             }
             buffer[buffer_index++] = ch;
-            // printf("%s\n", megallo->nev);
         }
     }
     vonal = vonal->elozo;
+    free(vonal->kovetkezo->megallo);
+    free(vonal->kovetkezo);
     vonal->kovetkezo = NULL;
 
     free(buffer);
@@ -196,8 +193,10 @@ MegalloList *megallo_search(Metro *metro, char *megallo_chunk) {
                 *uj = (Megallo){NULL, NULL, NULL, NULL, NULL, 0, 0};
                 uj->nev = malloc(sizeof(char) * strlen(mozgo->nev) + 1);
                 strcpy(uj->nev, mozgo->nev);
-                uj->ido1 = mozgo->ido1;
-                uj->ido2 = mozgo->ido2;
+                uj->ido1 = malloc(sizeof(Idopont) * mozgo->ido1Hossz);
+                *uj->ido1 = *mozgo->ido1;
+                uj->ido2 = malloc(sizeof(Idopont) * mozgo->ido2Hossz);
+                *uj->ido2 = *mozgo->ido2;
                 uj->ido1Hossz = mozgo->ido1Hossz;
                 uj->ido2Hossz = mozgo->ido2Hossz;
                 uj->kovetkezo = NULL;
@@ -396,9 +395,9 @@ void free_metro_network(Metro *metro) {
         Megallo *mozgo3 = mozgo->megallo;
         while (mozgo3 != NULL) {
             Megallo *mozgo4 = mozgo3->kovetkezo;
-            free(mozgo3->nev);
-            free(mozgo3->ido1);
-            free(mozgo3->ido2);
+            if (mozgo3->nev != NULL) free(mozgo3->nev);
+            if (mozgo3->ido1 != NULL) free(mozgo3->ido1);
+            if (mozgo3->ido2 != NULL) free(mozgo3->ido2);
             free(mozgo3);
             mozgo3 = mozgo4;
         }
