@@ -1,12 +1,14 @@
 #include <locale.h>
 #include <math.h>
-#include <ncurses.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
-#ifdef WIN32
+#if defined(__APPLE__) || defined(__linux__)
+#include <ncurses.h>
+#elif defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+#include <conio.h>
 #include <io.h>
 #define F_OK 0
 #define access _access
@@ -271,6 +273,7 @@ Menu *utvonalterv_visualizer_menu(Utvonalterv *utvonalterv, Menu *parent) {
 }
 
 void print_header() {
+#if defined(__APPLE__) || defined(__linux__)
     mvprintw(0, 0,
              "   __  ________________  ____    _________  ___   _  _________  "
              "____  "
@@ -288,6 +291,24 @@ void print_header() {
              "/_/  /_/___/ /_/ /_/|_|\\____/   /_/ /_/|_/_/ |_/_/|_/___/_/   "
              "\\____/_/|_|/_/  \\____/___/");
     mvprintw(4, 0, "\n");
+#elif defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+    printf(
+        "   __  ________________  ____    _________  ___   _  _________  "
+        "____  "
+        "___ ________  ______\n");
+    printf(
+        "  /  |/  / __/_  __/ _ \\/ __ \\  /_  __/ _ \\/ _ | / |/ / __/ _ "
+        "\\/ "
+        "__ \\/ _ /_  __/ / / / __/\n");
+    printf(
+        " / /|_/ / _/  / / / , _/ /_/ /   / / / , _/ __ |/    _\\ \\/ ___/ "
+        "/_/ "
+        "/ , _// / / /_/ _\\ \\\n");
+    printf(
+        "/_/  /_/___/ /_/ /_/|_|\\____/   /_/ /_/|_/_/ |_/_/|_/___/_/   "
+        "\\____/_/|_|/_/  \\____/___/\n");
+    printf("\n");
+#endif
 }
 
 int main() {
@@ -363,9 +384,15 @@ int main() {
             current_menu = &menetrendMenu1NoMenetrend;
         }
         for (int i = 0; i < current_menu->size; i++) {
+#if defined(__APPLE__) || defined(__linux__)
             if (i == selected) attron(A_REVERSE);
             mvprintw(i + headerSize, 0, "%s", current_menu->items[i].text);
             if (i == selected) attroff(A_REVERSE);
+#elif defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+            if (i == selected) _textbackground(WHITE);
+            printf("%s\n", current_menu->items[i].text);
+            if (i == selected) _textbackground(BLACK);
+#endif
         }
         if (current_menu->parent != NULL) {
             int back_index;
@@ -379,26 +406,48 @@ int main() {
                 back_index = current_menu->size;
             }
 
+#if defined(__APPLE__) || defined(__linux__)
             if (back_index == selected) attron(A_REVERSE);
             if (current_menu->type != IDOPONT_SELECTOR)
                 mvprintw(back_index + headerSize, 0, "<- Vissza");
             if (back_index == selected) attroff(A_REVERSE);
 
+#elif defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+            if (back_index == selected) _textbackground(WHITE);
+            if (current_menu->type != IDOPONT_SELECTOR) printf("<- Vissza\n");
+            if (back_index == selected) _textbackground(BLACK);
+
+#endif
+
         } else {
+#if defined(__APPLE__) || defined(__linux__)
             if (current_menu->size == selected) attron(A_REVERSE);
             mvprintw(current_menu->size + headerSize, 0, "Kilépés");
             if (current_menu->size == selected) attroff(A_REVERSE);
+#elif defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+            if (current_menu->size == selected) _textbackground(WHITE);
+            printf("Kilépés\n");
+            if (current_menu->size == selected) _textbackground(BLACK);
+#endif
         }
         if (current_menu->accepts_input) {
             switch (current_menu->type) {
                 case MEGALLO_SELECTOR:
+#if defined(__APPLE__) || defined(__linux__)
                     mvprintw(current_menu->size + headerSize + 1, 0,
-                             "Keresés %lu: %s ", strlen(searchKey.key),
-                             searchKey.key);
+                             "Keresés: %s ", searchKey.key);
+#elif defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+                    printf("Keresés: %s ", searchKey.key);
+#endif
                     break;
                 case IDOPONT_SELECTOR:
+#if defined(__APPLE__) || defined(__linux__)
                     mvprintw(current_menu->size + headerSize, 0,
                              "Időpont (óó:pp): %s", idopont.key);
+#elif defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+                    printf("Időpont (óó:pp): %s", idopont.key);
+#endif
+
                     break;
                 default:
                     break;
