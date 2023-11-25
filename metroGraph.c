@@ -330,8 +330,8 @@ struct Utvonalterv* utvonaltervezes(Metro* metro, char* indulo, char* cel,
     struct MetroGraph* metroGraph = createGraph(0);
     Vonal* mozgo = metro->vonalak;
     AtszallasiMegallo** atszallasiMegallok = (AtszallasiMegallo**)malloc(
-        sizeof(AtszallasiMegallo));  // array of pointers to atszallasi
-                                     // megallok
+        sizeof(AtszallasiMegallo) * vonalakSzama);  // array of pointers to
+                                                    // atszallasi megallok
     while (mozgo != NULL) {
         AtszallasiMegallo* uj = atszallasi_megallok_on_vonal(metro, mozgo);
         if (uj == NULL) {
@@ -339,6 +339,8 @@ struct Utvonalterv* utvonaltervezes(Metro* metro, char* indulo, char* cel,
             return NULL;
         }
 
+        atszallasiMegallok = (AtszallasiMegallo**)realloc(
+            atszallasiMegallok, sizeof(AtszallasiMegallo) * (vonalakSzama + 1));
         atszallasiMegallok[vonalakSzama] = uj;
         vonalakSzama++;
         mozgo = mozgo->kovetkezo;
@@ -362,6 +364,7 @@ struct Utvonalterv* utvonaltervezes(Metro* metro, char* indulo, char* cel,
                 metroGraph->tomb[*allomasVertex].taroltMegallokSzama++;
             }
             mozgo2 = mozgo2->kovetkezo;
+            free(allomasVertex);
         }
     }
     int* induloVertex = get_allomas_vertex_by_name(metroGraph, indulo);
@@ -389,6 +392,7 @@ struct Utvonalterv* utvonaltervezes(Metro* metro, char* indulo, char* cel,
             }
             induloMegallo = induloMegallo->kovetkezo;
         }
+        free_vonals(induloVonal);
     }
     if (celVertex == NULL) {
         celVan = true;
@@ -407,6 +411,7 @@ struct Utvonalterv* utvonaltervezes(Metro* metro, char* indulo, char* cel,
             }
             celMegallo = celMegallo->kovetkezo;
         }
+        free_vonals(celVonal);
     }
     for (int i = 0; i < metroGraph->allomasVSzam; i++) {
         for (int j = 0; j < metroGraph->allomasVSzam; j++) {
@@ -439,6 +444,10 @@ struct Utvonalterv* utvonaltervezes(Metro* metro, char* indulo, char* cel,
     Utvonalterv* utvonalterv = dijkstra_to_utvonalterv(
         metroGraph, distance, source, destination, indulasiIdo, metro);
     free(distance);
+    free(induloVertex);
+    free(celVertex);
+    freeGraph(metroGraph);
+    free_atszallasi_megallok(atszallasiMegallok, vonalakSzama);
     return utvonalterv;
 }
 // int main() {
@@ -494,5 +503,7 @@ struct Utvonalterv* utvonaltervezes(Metro* metro, char* indulo, char* cel,
 //         }
 //         mozgo = mozgo->kovetkezo;
 //     }
+//     free_metro_network(metro);
+//     free_utvonalterv(utvonalterv);
 //     return 0;
 // }

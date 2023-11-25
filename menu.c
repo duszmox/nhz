@@ -217,11 +217,13 @@ Menu *utvonalterv_visualizer_menu(Utvonalterv *utvonalterv, Menu *parent) {
     mozgo = utvonalterv;
     int i = 0;
     while (mozgo != NULL) {
+        char *induloIdopont = idopont_to_string(*mozgo->indulasiIdo);
         char *indulo = malloc(sizeof(char) * strlen(mozgo->indulo->nev) + 1 +
                               strlen("O-()  - ") + strlen(mozgo->vonal->nev) +
-                              strlen(idopont_to_string(*mozgo->indulasiIdo)));
+                              strlen(induloIdopont));
         sprintf(indulo, "O-(%s) - %s %s", mozgo->vonal->nev, mozgo->indulo->nev,
-                idopont_to_string(*mozgo->indulasiIdo));
+                induloIdopont);
+        free(induloIdopont);
         allocate_string(&menu->items[i].text, indulo);
         i++;
         allocate_string(&menu->items[i].text, "|");
@@ -240,11 +242,13 @@ Menu *utvonalterv_visualizer_menu(Utvonalterv *utvonalterv, Menu *parent) {
         i++;
         allocate_string(&menu->items[i].text, "|");
         i++;
+        char *celIdopont = idopont_to_string(*mozgo->erkezesiIdo);
         char *cel = malloc(sizeof(char) * strlen(mozgo->cel->nev) + 1 +
                            strlen("O-()  - ") + strlen(mozgo->vonal->nev) +
-                           strlen(idopont_to_string(*mozgo->erkezesiIdo)));
+                           strlen(celIdopont));
         sprintf(cel, "O-(%s) - %s %s", mozgo->vonal->nev, mozgo->cel->nev,
-                idopont_to_string(*mozgo->erkezesiIdo));
+                celIdopont);
+        free(celIdopont);
         allocate_string(&menu->items[i].text, cel);
         i++;
         if (mozgo->kovetkezo != NULL) {
@@ -306,7 +310,8 @@ int main() {
 
     int ch;  // character input
 
-    Utvonalterv utvonalterv = {NULL, NULL, NULL, NULL, NULL, NULL};
+    Utvonalterv *utvonalterv = malloc(sizeof(Utvonalterv));
+    *utvonalterv = (Utvonalterv){NULL, NULL, NULL, NULL, NULL, NULL};
     bool utvonaltervAlloced = false;
     Metro *metro = NULL;
 
@@ -479,23 +484,31 @@ int main() {
                         megalloSelectorIdx = 0;
                     } else if (current_menu->type == IDOPONT_SELECTOR) {
                         if (idopont.size == 5) {
-                            utvonalterv.indulasiIdo = malloc(sizeof(Idopont));
-                            *utvonalterv.indulasiIdo =
+                            utvonalterv->indulasiIdo = malloc(sizeof(Idopont));
+                            *utvonalterv->indulasiIdo =
                                 string_to_idopont(idopont.key);
                             Menu *tmp = current_menu->parent;
                             current_menu = gen_utvonalmenu(
-                                &utvonalterv, current_menu->parent->parent);
+                                utvonalterv, current_menu->parent->parent);
                             free_menu(tmp);
                             selected = 0;
                             idopont.key = malloc(sizeof(char));
                             idopont.size = 0;
                             current_menu->selected = 0;
                             continue;
+                        } else {
+                            clear_astring(&idopont);
+                            Menu *tmp = current_menu->parent;
+                            current_menu = gen_utvonalmenu(
+                                utvonalterv, current_menu->parent->parent);
+                            free_menu(tmp);
+                            continue;
                         }
                     }
                     if (current_menu->type == UTVALTERV_MENU) {
-                        free(utvonalterv.indulasiIdo);
-                        utvonalterv =
+                        free_utvonalterv(utvonalterv);
+                        utvonalterv = malloc(sizeof(Utvonalterv));
+                        *utvonalterv =
                             (Utvonalterv){NULL, NULL, NULL, NULL, 0, NULL};
                         free(searchKey.key);
                         searchKey.key = NULL;
@@ -503,11 +516,12 @@ int main() {
                         free(idopont.key);
                         idopont.key = NULL;
                         idopont.size = 0;
+                        if (metro != NULL) free_metro_network(metro);
+                        metro = NULL;
                     }
                     Menu *parent = current_menu->parent;
                     if (UTVALTERV_MENU == current_menu->type ||
                         MEGALLO_SELECTOR == current_menu->type ||
-                        IDOPONT_SELECTOR == current_menu->type ||
                         UTVONALTERV_VISUALIZER == current_menu->type) {
                         free_menu(current_menu);
                     }
@@ -519,6 +533,7 @@ int main() {
                         free(mainMenu.items[1].text);
                         utvonaltervAlloced = false;
                     }
+                    free(utvonalterv);
                     if (metro != NULL) free_metro_network(metro);
                     break;
                 }
@@ -531,11 +546,13 @@ int main() {
                     if (selected == 1) {
                         if (access("menetrend.csv", F_OK) == 0) {
                             current_menu =
-                                gen_utvonalmenu(&utvonalterv, &mainMenu);
+                                gen_utvonalmenu(utvonalterv, &mainMenu);
                             selected = 0;
                             metro = menetrend_beolvas();
-                            utvonalterv = (Utvonalterv){NULL, NULL, NULL,
-                                                        NULL, NULL, NULL};
+                            free(utvonalterv);
+                            utvonalterv = malloc(sizeof(Utvonalterv));
+                            *utvonalterv = (Utvonalterv){NULL, NULL, NULL,
+                                                         NULL, NULL, NULL};
                         }
                     }
 
@@ -572,22 +589,19 @@ int main() {
                         selected = 0;
                     }
                     if (selected == 2) {
-                        if (idopont.key == NULL) {
-                            idopont.key = malloc(sizeof(char));
-                        }
-                        idopont.size = 0;
-                        strcpy(idopont.key, "");
+                        clear_astring(&idopont);
                         idopontSelectorMenu.parent = current_menu;
                         current_menu = &idopontSelectorMenu;
                         selected = 0;
                     }
                     if (selected == 3) {
-                        if (utvonalterv.indulo != NULL &&
-                            utvonalterv.cel != NULL &&
-                            utvonalterv.indulasiIdo != NULL) {
-                            Utvonalterv *utvonalterv2 = utvonaltervezes(
-                                metro, utvonalterv.indulo->nev,
-                                utvonalterv.cel->nev, *utvonalterv.indulasiIdo);
+                        if (utvonalterv->indulo != NULL &&
+                            utvonalterv->cel != NULL &&
+                            utvonalterv->indulasiIdo != NULL) {
+                            Utvonalterv *utvonalterv2 =
+                                utvonaltervezes(metro, utvonalterv->indulo->nev,
+                                                utvonalterv->cel->nev,
+                                                *utvonalterv->indulasiIdo);
                             current_menu = utvonalterv_visualizer_menu(
                                 utvonalterv2, current_menu);
                             selected = current_menu->size;
@@ -611,11 +625,11 @@ int main() {
                     }
                     switch (selectorType) {
                         case INDULO:
-                            utvonalterv.indulo =
+                            utvonalterv->indulo =
                                 find_megallo_for_string(metro, megallo->nev);
                             break;
                         case CEL:
-                            utvonalterv.cel =
+                            utvonalterv->cel =
                                 find_megallo_for_string(metro, megallo->nev);
                             break;
                         default:
@@ -626,7 +640,7 @@ int main() {
                     Menu *parent = current_menu->parent->parent;
                     free_menu(current_menu->parent);
                     free_menu(current_menu);
-                    current_menu = gen_utvonalmenu(&utvonalterv, parent);
+                    current_menu = gen_utvonalmenu(utvonalterv, parent);
                     selectorType = NOT_SELECTED;
                     clear_astring(&searchKey);
                     free_megallo_list(megallok);
