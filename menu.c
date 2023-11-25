@@ -198,18 +198,19 @@ Menu *utvonalterv_visualizer_menu(Utvonalterv *utvonalterv, Menu *parent) {
     int size = 0;
     if (mozgo == NULL) {
         size = 1;
+    } else {
+        while (mozgo != NULL) {
+            size += 2;  // ket megallo
+            size += 3;
+            mozgo = mozgo->kovetkezo;
+            size += 3;
+        }
+        size -= 2;
     }
-    while (mozgo != NULL) {
-        size += 2;  // ket megallo
-        size += 3;
-        mozgo = mozgo->kovetkezo;
-        size += 3;
-    }
-    size -= 2;
     menu->size = size;
     menu->items = malloc(sizeof(MenuItem) * size);
     if (size == 1) {
-        allocate_string(&menu->items[0].text, "Nincs találat");
+        allocate_string(&menu->items[0].text, "Hiba történt a tervezés során");
         menu->selected = 1;
         menu->accepts_input = false;
         return menu;

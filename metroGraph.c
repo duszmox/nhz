@@ -325,6 +325,12 @@ struct Utvonalterv* dijkstra_to_utvonalterv(struct MetroGraph* graph,
 
 struct Utvonalterv* utvonaltervezes(Metro* metro, char* indulo, char* cel,
                                     Idopont indulasiIdo) {
+    if (indulo == NULL || cel == NULL) {
+        return NULL;
+    }
+    if (strcmp(indulo, cel) == 0) {
+        return NULL;
+    }
     int vonalakSzama = 0;
     int fixStations = 0;
     struct MetroGraph* metroGraph = createGraph(0);
