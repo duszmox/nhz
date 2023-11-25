@@ -31,9 +31,22 @@ MetroGen *vonalak_beolvas() {
             }
             buffer[buffer_index] = '\0';
             buffer_index = 0;
-
+            if (buffer[0] == ',') continue;
+            if (strstr(buffer, ",,") != NULL) continue;
             VonalGen vonal = {NULL, NULL, 0, NULL};
             vonal.nev = strdup(strtok(buffer, ","));
+            VonalGen *mozgo = metro->vonalak;
+            bool talalt = false;
+            while (mozgo != NULL) {
+                if (strcmp(mozgo->nev, vonal.nev) == 0) {
+                    talalt = true;
+                    break;
+                }
+                mozgo = mozgo->kovetkezo;
+            }
+            if (talalt) {
+                continue;
+            }
             char *token = strtok(NULL, ",");
             while (token != NULL) {
                 if (vonal.megallokSzama == 0) {

@@ -296,6 +296,16 @@ struct Utvonalterv* dijkstra_to_utvonalterv(struct MetroGraph* graph,
             while (ido_kisebb(uj->indulo->ido1[indulasiIdoIndex],
                               *tmpIndulasiIdo)) {
                 indulasiIdoIndex++;
+                if (indulasiIdoIndex == uj->indulo->ido1Hossz) {
+                    free_utvonalterv(tripPlan);
+                    free(megalloTav);
+                    free(tmpIndulasiIdo);
+                    free(uj->indulasiIdo);
+                    free(uj->erkezesiIdo);
+                    free(uj);
+                    free(path);
+                    return NULL;
+                };
             }
             *uj->indulasiIdo = uj->indulo->ido1[indulasiIdoIndex];
             *uj->erkezesiIdo = uj->cel->ido1[indulasiIdoIndex];
@@ -303,6 +313,16 @@ struct Utvonalterv* dijkstra_to_utvonalterv(struct MetroGraph* graph,
             while (ido_kisebb(uj->indulo->ido2[indulasiIdoIndex],
                               *tmpIndulasiIdo)) {
                 indulasiIdoIndex++;
+                if (indulasiIdoIndex == uj->indulo->ido2Hossz) {
+                    free_utvonalterv(tripPlan);
+                    free(megalloTav);
+                    free(tmpIndulasiIdo);
+                    free(uj->indulasiIdo);
+                    free(uj->erkezesiIdo);
+                    free(uj);
+                    free(path);
+                    return NULL;
+                };
             }
             *uj->indulasiIdo = uj->indulo->ido2[indulasiIdoIndex];
             *uj->erkezesiIdo = uj->cel->ido2[indulasiIdoIndex];
