@@ -270,6 +270,26 @@ Menu *utvonalterv_visualizer_menu(Utvonalterv *utvonalterv, Menu *parent) {
     return menu;
 }
 
+void print_header() {
+    mvprintw(0, 0,
+             "   __  ________________  ____    _________  ___   _  _________  "
+             "____  "
+             "___ ________  ______");
+    mvprintw(1, 0,
+             "  /  |/  / __/_  __/ _ \\/ __ \\  /_  __/ _ \\/ _ | / |/ / __/ _ "
+             "\\/ "
+             "__ \\/ _ /_  __/ / / / __/");
+    mvprintw(
+        2, 0,
+        " / /|_/ / _/  / / / , _/ /_/ /   / / / , _/ __ |/    _\\ \\/ ___/ "
+        "/_/ "
+        "/ , _// / / /_/ _\\ \\");
+    mvprintw(3, 0,
+             "/_/  /_/___/ /_/ /_/|_|\\____/   /_/ /_/|_/_/ |_/_/|_/___/_/   "
+             "\\____/_/|_|/_/  \\____/___/");
+    mvprintw(4, 0, "\n");
+}
+
 int main() {
     init_ncurses();
 
@@ -333,26 +353,7 @@ int main() {
             allocate_string(&mainMenu.items[1].text, "Ú̶t̶v̶o̶n̶a̶l̶t̶e̶r̶v̶e̶z̶é̶s̶");
             utvonaltervAlloced = true;
         }
-        mvprintw(
-            0, 0,
-            "   __  ________________  ____    _________  ___   _  _________  "
-            "____  "
-            "___ ________  ______");
-        mvprintw(
-            1, 0,
-            "  /  |/  / __/_  __/ _ \\/ __ \\  /_  __/ _ \\/ _ | / |/ / __/ _ "
-            "\\/ "
-            "__ \\/ _ /_  __/ / / / __/");
-        mvprintw(
-            2, 0,
-            " / /|_/ / _/  / / / , _/ /_/ /   / / / , _/ __ |/    _\\ \\/ ___/ "
-            "/_/ "
-            "/ , _// / / /_/ _\\ \\");
-        mvprintw(
-            3, 0,
-            "/_/  /_/___/ /_/ /_/|_|\\____/   /_/ /_/|_/_/ |_/_/|_/___/_/   "
-            "\\____/_/|_|/_/  \\____/___/");
-        mvprintw(4, 0, "\n");
+        print_header();
         if (current_menu == &menetrendMenu1NoMenetrend &&
             access("menetrend.csv", F_OK) == 0) {
             current_menu = &menetrendMenu1Menetrend;
@@ -362,13 +363,9 @@ int main() {
             current_menu = &menetrendMenu1NoMenetrend;
         }
         for (int i = 0; i < current_menu->size; i++) {
-            if (i == selected) {
-                attron(A_REVERSE);
-            }
+            if (i == selected) attron(A_REVERSE);
             mvprintw(i + headerSize, 0, "%s", current_menu->items[i].text);
-            if (i == selected) {
-                attroff(A_REVERSE);
-            }
+            if (i == selected) attroff(A_REVERSE);
         }
         if (current_menu->parent != NULL) {
             int back_index;
@@ -381,22 +378,16 @@ int main() {
             } else {
                 back_index = current_menu->size;
             }
-            if (back_index == selected) {
-                attron(A_REVERSE);
-            }
+
+            if (back_index == selected) attron(A_REVERSE);
             if (current_menu->type != IDOPONT_SELECTOR)
                 mvprintw(back_index + headerSize, 0, "<- Vissza");
-            if (back_index == selected) {
-                attroff(A_REVERSE);
-            }
+            if (back_index == selected) attroff(A_REVERSE);
+
         } else {
-            if (current_menu->size == selected) {
-                attron(A_REVERSE);
-            }
+            if (current_menu->size == selected) attron(A_REVERSE);
             mvprintw(current_menu->size + headerSize, 0, "Kilépés");
-            if (current_menu->size == selected) {
-                attroff(A_REVERSE);
-            }
+            if (current_menu->size == selected) attroff(A_REVERSE);
         }
         if (current_menu->accepts_input) {
             switch (current_menu->type) {
@@ -550,35 +541,23 @@ int main() {
                     }
 
                 } else if (current_menu->type == MENETREND_MENU1) {
-                    if (selected == 0) {
-                        gen_m();
-                    }
+                    if (selected == 0) gen_m();
                 } else if (current_menu->type == MENETREND_MENU2) {
                     if (selected == 0) {
                         remove("menetrend.csv");
                         if (metro != NULL) free_metro_network(metro);
                         metro = NULL;
                     }
-                    if (selected == 1) {
-                        gen_m();
-                    }
+                    if (selected == 1) gen_m();
+
                 } else if (current_menu->type == UTVALTERV_MENU) {
-                    if (selected == 0) {
+                    if (selected == 0 || selected == 1) {
                         clear_astring(&searchKey);
                         megalloSelectorIdx = 0;
                         current_menu = gen_megallo_selector_menu(
                             metro, current_menu, searchKey.key,
                             megalloSelectorIdx);
-                        selectorType = INDULO;
-                        selected = 0;
-                    }
-                    if (selected == 1) {
-                        clear_astring(&searchKey);
-                        megalloSelectorIdx = 0;
-                        current_menu = gen_megallo_selector_menu(
-                            metro, current_menu, searchKey.key,
-                            megalloSelectorIdx);
-                        selectorType = CEL;
+                        selectorType = selected == 0 ? INDULO : CEL;
                         selected = 0;
                     }
                     if (selected == 2) {
@@ -606,7 +585,8 @@ int main() {
                     MegalloList *megallok =
                         megallo_search(metro, searchKey.key);
                     if (megallok->size == 0) {
-                        continue;
+                        continue;  // ha nincs talalat, akkor nem csinalunk
+                                   // semmit
                     }
                     Megallo *megallo = megallok->megallo;
                     sort_megallo_array(megallo);
@@ -631,11 +611,13 @@ int main() {
                     }
                     selected = 0;
                     megalloSelectorIdx = 0;
+                    selectorType = NOT_SELECTED;
+
                     Menu *parent = current_menu->parent->parent;
                     free_menu(current_menu->parent);
                     free_menu(current_menu);
                     current_menu = gen_utvonalmenu(utvonalterv, parent);
-                    selectorType = NOT_SELECTED;
+
                     clear_astring(&searchKey);
                     free_megallo_list(megallok);
                 }

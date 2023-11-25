@@ -86,15 +86,15 @@ Metro *menetrend_beolvas() {
                 megallo->nev = malloc(sizeof(char) * strlen(megalloNev) + 1);
                 strcpy(megallo->nev, megalloNev);
                 megallo->ido1 = ido;
-                megallo->ido1Hossz = numberOfCommas;
+                megallo->ido1Hossz = numberOfCommas + 2;
             } else {
                 strtok(NULL, ",");
                 strtok(NULL, ",");
                 megallo->ido2 = ido;
-                megallo->ido2Hossz = numberOfCommas;
+                megallo->ido2Hossz = numberOfCommas + 2;
             }
             int i = 0;
-            while (i < numberOfCommas) {
+            while (i <= numberOfCommas + 1) {
                 ido[i] = (Idopont){0, 0};
                 ido[i].ora = atoi(strtok(NULL, ":"));
                 ido[i].perc = atoi(strtok(NULL, ","));
