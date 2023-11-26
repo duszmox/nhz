@@ -523,7 +523,9 @@ int main() {
                         megalloSelectorIdx = 0;
                     } else if (current_menu->type == IDOPONT_SELECTOR) {
                         if (idopont.size == 5) {
-                            utvonalterv->indulasiIdo = malloc(sizeof(Idopont));
+                            if (utvonalterv->indulasiIdo == NULL)
+                                utvonalterv->indulasiIdo =
+                                    malloc(sizeof(Idopont));
                             *utvonalterv->indulasiIdo =
                                 string_to_idopont(idopont.key);
                             Menu *tmp = current_menu->parent;
