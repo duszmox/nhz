@@ -741,4 +741,4 @@ Egyéb distribúciók esetén az alábbi cikket ajánlom segítségként: <https
 
 Megeshet még, hogy a fordító nem találja a header file-okat a telepítés után sem, ekko a `-L` és `-I` tag-eket is hozzá kell fűzni az ncurses elérési útjával együtt. Például: `-L/opt/homebrew/opt/ncurses/lib -I/opt/homebrew/opt/ncurses/include`
 
-*A program csak MacOS-en lett tesztelve, ezért előfordulhatnak előre nem látott grafikai problémák egy Windows-os, vagy Linuxos futtatás esetén.*
+*A program csak MacOS-en lett tesztelve, ezért előfordulhatnak előre nem látott grafikai problémák egy Windows-os, vagy Linux-os futtatás esetén.*

@@ -371,6 +371,11 @@ int main() {
     int headerSize = 5;
 
     while (true) {
+#if defined(__APPLE__) || defined(__linux__)
+        clear();
+#elif defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+        system("cls");
+#endif
         if (access("menetrend.csv", F_OK) == 0) {
             if (utvonaltervAlloced) {
                 free(mainMenu.items[1].text);
@@ -450,9 +455,9 @@ int main() {
             if (current_menu->size == selected) attroff(A_REVERSE);
 #elif defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
             if (current_menu->size == selected)
-                SetConsoleTextAttribute(hConsole, FOREGROUND_GREEN |
-                                                      FOREGROUND_BLUE |
-                                                      FOREGROUND_RED);
+                SetConsoleTextAttribute(hConsole, BACKGROUND_GREEN |
+                                                      BACKGROUND_BLUE |
+                                                      BACKGROUND_RED);
             printf("Kilépés\n");
             if (current_menu->size == selected)
                 SetConsoleTextAttribute(hConsole, FOREGROUND_GREEN |
@@ -543,7 +548,7 @@ int main() {
             } else {
                 increase_selected(&selected, current_menu->size + 1);
             }
-        } else if (ch == '\n') {
+        } else if (ch == '\n' || ch == '\r') {
             if (selected == current_menu->size) {
                 if (current_menu->parent != NULL) {
                     if (current_menu->type == MEGALLO_SELECTOR) {
@@ -710,6 +715,11 @@ int main() {
                 }
             }
         } else if (current_menu->accepts_input) {
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+            if (ch == 0 || ch == 0xE0) {
+                continue;
+            }
+#endif
             if (ch == KEY_BACKSPACE || ch == KEY_DC || ch == 127) {
                 switch (current_menu->type) {
                     case MEGALLO_SELECTOR:
@@ -792,6 +802,5 @@ int main() {
 #if defined(__APPLE__) || defined(__linux__)
     endwin();
 #endif
-
     return 0;
 }
