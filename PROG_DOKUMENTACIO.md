@@ -2,7 +2,7 @@
 
 ## idopontok
 
-Header file. Az időpont management-tel foglalkozik. Definiálja egy időpont változó struktúráját, és a hozzákapcsolódó függvényeket tartaltalmazza.
+Header file. Az időpont management-tel foglalkozik. Definiálja egy Idopont változó struktúráját, és a hozzákapcsolódó függvényeket tartaltalmazza.
 
 ### idopontok | definiált típusok
 
@@ -33,7 +33,7 @@ A nullával bővítő függvény használja, hogy tudja, hogy amit éppen bőví
 Idopont idopont_osszead(Idopont idopont1, Idopont idopont2);
 ```
 
-Ez a függvény két Idopont típusú objektumot kap bemenetként (idopont1 és idopont2), majd összeadja az órákat és perceket. Az eredményül kapott időpontot visszaadja a függvény.
+Ez a függvény két Idopont típusú objektumot kap paraméterként (idopont1 és idopont2), majd összeadja az órákat és perceket. Az eredményül kapott időpontot visszaadja a függvény.
 
 ---
 
@@ -41,7 +41,7 @@ Ez a függvény két Idopont típusú objektumot kap bemenetként (idopont1 és 
 char *idopont_to_string(Idopont idopont);
 ```
 
-Ez a függvény egy Idopont típusú objektumot kap bemenetként (idopont), ellenőrzi, hogy az óra és perc értékek megfelelő értékekkel rendelkeznek-e , majd visszatérési értékként létrehoz egy időpontot ábrázoló dinamikusan fogalt karakterláncot.
+Ez a függvény egy Idopont típusú objektumot kap paraméterként (idopont), ellenőrzi, hogy az óra és perc értékek megfelelő értékekkel rendelkeznek-e , majd visszatérési értékként létrehoz egy időpontot ábrázoló dinamikusan fogalt karakterláncot.
 
 ---
 
@@ -49,7 +49,7 @@ Ez a függvény egy Idopont típusú objektumot kap bemenetként (idopont), elle
 char *bovit_nullaval(Idopont idopont, idopont_tipus it)
 ```
 
-Ez a függvény egy Idopont típusú objektumot (idopont) és egy idopont_tipus típusú enum értéket (it) kap bemenetként. A függvény létrehoz egy karakterláncot, amely a megfelelő típusú időegységet (óra vagy perc) tartalmazza, és hozzáad egy nullát az érték elé, ha az kevesebb, mint 10. A karakterláncot dinamikusan allokálja és adja vissza.
+Ez a függvény egy Idopont típusú objektumot (idopont) és egy idopont_tipus típusú enum értéket (it) kap paraméterként. A függvény létrehoz egy karakterláncot, amely a megfelelő típusú időegységet (óra vagy perc) tartalmazza, és hozzáad egy nullát az érték elé, ha az kevesebb, mint 10. A karakterláncot dinamikusan allokálja és adja vissza.
 
 ---
 
@@ -57,7 +57,7 @@ Ez a függvény egy Idopont típusú objektumot (idopont) és egy idopont_tipus 
 Idopont string_to_idopont(char *s)
 ```
 
-Ez a függvény egy karakterláncot (s) kap bemenetként, amely egy időpontot reprezentál "óra:perc" formátumban. A függvény létrehoz egy Idopont objektumot (amelynek mindkét értéke 0, arra az esetre ha mégse sikerülne beolvasni), majd az sscanf függvény segítségével beolvassa a karakterláncból az óra és perc értékeket, végül visszaadja az így létrehozott Idopont objektumot.
+Ez a függvény egy karakterláncot (s) kap paraméterként, amely egy időpontot reprezentál "óra:perc" formátumban. A függvény létrehoz egy Idopont objektumot (amelynek mindkét értéke 0, arra az esetre ha mégse sikerülne beolvasni), majd az sscanf függvény segítségével beolvassa a karakterláncból az óra és perc értékeket, végül visszaadja az így létrehozott Idopont objektumot.
 
 ---
 
@@ -738,6 +738,8 @@ sudo apt-get install libncurses5-dev libncursesw5-dev
 Egyéb distribúciók esetén az alábbi cikket ajánlom segítségként: <https://www.cyberciti.biz/faq/linux-install-ncurses-library-headers-on-debian-ubuntu-centos-fedora/>
 
 **Ezenkívül a compile parancs futtatásakor hozzá kell adni a parancshoz a `-lncursesw` tag-et, ennélkül nem fog rendesen működni a program.**
+
+**Illetve a math.h miatt az `-lm`-et it hozzá kell adni a compile argumentumokhoz***
 
 Megeshet még, hogy a fordító nem találja a header file-okat a telepítés után sem, ekko a `-L` és `-I` tag-eket is hozzá kell fűzni az ncurses elérési útjával együtt. Például: `-L/opt/homebrew/opt/ncurses/lib -I/opt/homebrew/opt/ncurses/include`
 
