@@ -10,7 +10,7 @@
 #include "debugmalloc.h"
 #include "idopontok.h"
 
-Metro *menetrend_beolvas() {
+struct Metro *menetrend_beolvas() {
     FILE *fp = fopen("menetrend.csv", "r");
     if (fp == NULL) {
         printf("Hiba a fajl megnyitasakor!\n");
@@ -128,7 +128,7 @@ Metro *menetrend_beolvas() {
     return metro;
 }
 
-bool is_on_vonal(Vonal *vonal, char *megallo) {
+bool is_on_vonal(Vonal *vonal, const char *megallo) {
     Megallo *mozgo = vonal->megallo;
     while (mozgo != NULL) {
         if (strcmp(mozgo->nev, megallo) == 0) {
@@ -139,7 +139,7 @@ bool is_on_vonal(Vonal *vonal, char *megallo) {
     return false;
 }
 
-Megallo *is_string_on_megallo_vonal(Megallo *megallo, char *megalloNev) {
+struct Megallo *is_string_on_megallo_vonal(Megallo *megallo, char *megalloNev) {
     Megallo *mozgo = megallo;
     while (mozgo != NULL) {
         if (strcmp(mozgo->nev, megalloNev) == 0) {
@@ -183,7 +183,7 @@ int *megallo_distance(Vonal *vonal, char *megallo1, char *megallo2) {
     *distance = tav2 - tav;
     return distance;
 }
-MegalloList *megallo_search(Metro *metro, char *megallo_chunk) {
+struct MegalloList *megallo_search(Metro *metro, char *megallo_chunk) {
     int megallokSzama = 0;
     Megallo *megallok = malloc(sizeof(Megallo));
     *megallok = (Megallo){NULL, NULL, NULL, NULL, NULL, 0, 0};
@@ -243,30 +243,16 @@ MegalloList *megallo_search(Metro *metro, char *megallo_chunk) {
     megalloList->size = megallokSzama;
     return megalloList;
 }
-Vonal *find_vonal_for_megallo(Metro *metro, Megallo *megallo) {
-    Vonal *mozgo = metro->vonalak;
-    while (mozgo != NULL) {
-        Megallo *mozgo2 = mozgo->megallo;
-        while (mozgo2 != NULL) {
-            if (strcmp(mozgo2->nev, megallo->nev) == 0) {
-                return mozgo;
-            }
-            mozgo2 = mozgo2->kovetkezo;
-        }
-        mozgo = mozgo->kovetkezo;
-    }
-    return NULL;
-}
+
 void sort_megallo_array(Megallo *megallok) {
-    int swapped;
+    int cserelt;
     struct Megallo *ptr1;
     struct Megallo *lptr = NULL;
 
-    /* Checking for empty list */
     if (megallok == NULL) return;
 
     do {
-        swapped = 0;
+        cserelt = 0;
         ptr1 = megallok;
 
         while (ptr1->kovetkezo != lptr) {
@@ -275,13 +261,14 @@ void sort_megallo_array(Megallo *megallok) {
                 char *temp = ptr1->nev;
                 ptr1->nev = ptr1->kovetkezo->nev;
                 ptr1->kovetkezo->nev = temp;
-                swapped = 1;
+                cserelt = 1;
             }
             ptr1 = ptr1->kovetkezo;
         }
         lptr = ptr1;
-    } while (swapped);
+    } while (cserelt);
 }
+
 int count_megallok(Megallo *megallok) {
     int count = 0;
     Megallo *mozgo = megallok;
@@ -291,7 +278,8 @@ int count_megallok(Megallo *megallok) {
     }
     return count;
 }
-Vonal *find_vonal_for_megallo_string(Metro *metro, char *megalloNev) {
+struct Vonal *find_vonal_for_megallo_string(struct Metro *metro,
+                                            const char *megalloNev) {
     Vonal *mozgo = metro->vonalak;
     Vonal *talaltVonalak = NULL;
     while (mozgo != NULL) {
@@ -322,7 +310,8 @@ Vonal *find_vonal_for_megallo_string(Metro *metro, char *megalloNev) {
     }
     return talaltVonalak;
 }
-AtszallasiMegallo *atszallasi_megallok_on_vonal(Metro *Metro, Vonal *vonal) {
+struct AtszallasiMegallo *atszallasi_megallok_on_vonal(struct Metro *Metro,
+                                                       struct Vonal *vonal) {
     AtszallasiMegallo *atszallasiMegallok = malloc(sizeof(AtszallasiMegallo));
     *atszallasiMegallok = (AtszallasiMegallo){NULL, NULL, NULL};
     Megallo *mozgo = vonal->megallo;
@@ -361,23 +350,9 @@ AtszallasiMegallo *atszallasi_megallok_on_vonal(Metro *Metro, Vonal *vonal) {
     }
     return atszallasiMegallok;
 }
-int count_utvonal_distance(Metro *metro, Utvonalterv *utvonalterv) {
-    int tav = 0;
-    Utvonalterv *mozgo = utvonalterv;
-    while (mozgo != NULL) {
-        Vonal *vonalakForMegallo =
-            find_vonal_for_megallo_string(metro, mozgo->indulo->nev);
-        int *distance = megallo_distance(vonalakForMegallo, mozgo->indulo->nev,
-                                         mozgo->cel->nev);
-        tav += *distance;
-        free(distance);
-        free(vonalakForMegallo);
-        mozgo = mozgo->kovetkezo;
-    }
-    return tav;
-}
-struct Vonal *are_megallok_on_same_vonal_string(Metro *metro, char *megallo1,
-                                                char *megallo2) {
+struct Vonal *are_megallok_on_same_vonal_string(Metro *metro,
+                                                const char *megallo1,
+                                                const char *megallo2) {
     Vonal *mozgo = metro->vonalak;
     while (mozgo != NULL) {
         Megallo *mozgo2 = mozgo->megallo;
@@ -398,7 +373,7 @@ struct Vonal *are_megallok_on_same_vonal_string(Metro *metro, char *megallo1,
     return NULL;
 }
 
-struct Megallo *find_megallo_for_string(Metro *metro, char *megalloNev) {
+struct Megallo *find_megallo_for_string(Metro *metro, const char *megalloNev) {
     Vonal *mozgo = metro->vonalak;
     while (mozgo != NULL) {
         Megallo *mozgo2 = mozgo->megallo;
@@ -444,21 +419,6 @@ void free_metro_network(Metro *metro) {
         mozgo = mozgo2;
     }
     free(metro);
-}
-
-bool is_megallo_p_on_metro(Metro *metro, Megallo *megallo) {
-    Vonal *mozgo = metro->vonalak;
-    while (mozgo != NULL) {
-        Megallo *mozgo2 = mozgo->megallo;
-        while (mozgo2 != NULL) {
-            if (megallo == mozgo2) {
-                return true;
-            }
-            mozgo2 = mozgo2->kovetkezo;
-        }
-        mozgo = mozgo->kovetkezo;
-    }
-    return false;
 }
 
 void free_utvonalterv(Utvonalterv *utvonalterv) {
