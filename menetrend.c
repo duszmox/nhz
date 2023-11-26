@@ -8,7 +8,7 @@
 #include "debugmalloc.h"
 #include "idopontok.h"
 
-MetroGen *vonalak_beolvas() {
+struct MetroGen *vonalak_beolvas() {
     FILE *fp = fopen("megallok.csv", "r");
     if (fp == NULL) {
         printf("Hiba a fajl megnyitasakor!\n");
@@ -98,8 +98,8 @@ MetroGen *vonalak_beolvas() {
     fclose(fp);
     return metro;
 }
-// return the first MegalloGen of the VonalGen
-MegalloGen *elso_megallo(VonalGen vonal) {
+
+struct MegalloGen *elso_megallo(VonalGen vonal) {
     MegalloGen *megallo = vonal.megallo;
     while (megallo->elozo != NULL) {
         megallo = megallo->elozo;
@@ -107,7 +107,7 @@ MegalloGen *elso_megallo(VonalGen vonal) {
     return megallo;
 }
 
-MegalloGen *utolso_megallo(VonalGen vonal) {
+struct MegalloGen *utolso_megallo(VonalGen vonal) {
     MegalloGen *megallo = vonal.megallo;
     while (megallo->kovetkezo != NULL) {
         megallo = megallo->kovetkezo;

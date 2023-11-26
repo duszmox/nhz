@@ -17,7 +17,7 @@ typedef struct MetroGen {
     VonalGen *vonalak;
     int vonalakSzama;
 } MetroGen;
-MetroGen *vonalak_beolvas();
+struct MetroGen *vonalak_beolvas();
 void gen_menetrend(MetroGen metro);
 void free_metro(MetroGen *metro);
 void del_menetrend();

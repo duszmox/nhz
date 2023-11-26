@@ -4,7 +4,7 @@
 
 Header file. Az időpont management-tel foglalkozik. Definiálja egy időpont változó struktúráját, és a hozzákapcsolódó függvényeket tartaltalmazza.
 
-### Definiált típusok
+### idopontok | definiált típusok
 
 #### Időpont
 
@@ -27,7 +27,7 @@ typedef enum idopont_tipus { ORA, PERC } idopont_tipus;
 
 A nullával bővítő függvény használja, hogy tudja, hogy amit éppen bővít az óra-e vagy perc.
 
-### Függvények
+### idopontok | függvények
 
 ```c
 Idopont idopont_osszead(Idopont idopont1, Idopont idopont2);
@@ -78,6 +78,107 @@ Ez a függvény kiszámolja két időpont közötti különbséget percekben. Ez
 ## menetrend
 
 Az első menüpont függvényeit tartalmazza. Beolvassa a megállók csv file-ból a megállókat és legenerálja a menetrendet.
+
+### menetrend | definiált típusok
+
+#### MegalloGen
+
+```c
+typedef struct MegalloGen {
+    char *nev;
+    struct MegalloGen *kovetkezo;
+    struct MegalloGen *elozo;
+} MegalloGen;
+```
+
+Duplán láncolt lista. Egy megálló nevét és a soron következő, illetve előző megálló pointerét tartalmazza.
+
+---
+
+#### VonalGen
+
+```c
+typedef struct VonalGen {
+    char *nev;
+    MegalloGen *megallo;
+    int megallokSzama;
+    struct VonalGen *kovetkezo;
+} VonalGen;
+```
+
+Láncolt lista. Egy vonal nevét, a hozzá tartozó `MegalloGen` típusú láncolt lista első elemét, ennek a listának a számát és a következő vonalra mutató pointert tartalmazza.
+
+---
+
+#### MetroGen
+
+```c
+typedef struct MetroGen {
+    VonalGen *vonalak;
+    int vonalakSzama;
+} MetroGen;
+```
+
+Ez az összefoglaló objektuma a metróhálózatnak. Tartalmazza a vonalak láncolt listájának első elemére mutató pointert, illetve azt, hogy hány eleme van annak a láncolt listának.
+
+### menetrend | függvények
+
+```c
+struct MetroGen *vonalak_beolvas()
+```
+
+Beolvassa a `megallok.csv` file-ban található vonalakat és azok megállóit. Ezt eltárolja egy MetroGen típusú változóban, és visszaadja az erre a változóra mutató memóriacímet. Ha ugyanolyan névvel rendelkezik kettő vonal, akkor csak az egyiket olvassa be. Ha egy vonalnak nincs neve, vagy egyik megállójának nincs neve *(értsd kettő vessző van egymás után)* akkor azt a vonalat kihagyja.
+
+---
+
+```c
+struct MegalloGen *elso_megallo(VonalGen vonal)
+```
+
+Visszaadja egy vonalon található első megállónak a memóriacímét.
+
+---
+
+```c
+struct MegalloGen *utolso_megallo(VonalGen vonal)
+```
+
+Visszaadja egy vonalon található utolsó megállónak a memóriacímét.
+
+---
+
+```c
+void gen_menetrend(MetroGen metro)
+```
+
+Megadott MetroGen objektumból legenerál egy menetrendet. Minden sor egy megállót tartalmaz. Az adatok a csv formátumhoz híven vesszővel vannak elválasztva. Minden sor első eleme a járat neve (pl.: M2), a második a vonal végállomásának neve (pl.: Mexikói Út), a harmadik az aktuális megálló neve ahova az indulási időpontok tartoznak (pl.: Oktogon), a további elemek pedig az indulási időpontokat jelzi (pl.: 6:55)  
+Példa:
+
+```txt
+M1,Mexikói út,Vörösmarty Tér,1:01,1:06,1:11,1:16,1:21,...,23:46,23:51,23:56
+M1,Vörösmarty Tér,Vörösmarty Tér,1:00,1:05,1:10,1:15,1:20,...,23:45,23:50,23:55
+.
+.
+.
+M4,Kelenföld Vasútállomás,Keti Pályaudvar,1:00,1:05,1:10,1:15,1:20,...,23:45,23:50,23:55
+M4,Keleti Pályaudvar,Keti Pályaudvar,1:00,1:05,1:10,1:15,1:20,...,23:45,23:50,23:55
+```
+
+---
+
+```c
+void free_metro(MetroGen *metro)
+```
+
+Felszabadítja a paraméterként kapott MetroGen típusú változóban tárolt megállókat, vonalakat és magát a metróhálózat változót is.
+
+---
+
+```c
+void del_menetrend()
+```
+
+Törli a `menetrend.csv` file-t.
 
 ## utvonalterv
 
