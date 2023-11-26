@@ -717,6 +717,8 @@ A getch() függvény segítségével bekér egy karaktert a felhasználótól. H
 Az egyes menüpontok mögött rejlő function mindig a menü típusától függ. Ha a kiválasztott menüpont száma megegyezik a menü méretével, akkor mindig a vissza/kilépés funkció fog lefutni.  
 Ha olyan menüben vagyunk ahol az `accepts_input` igaz értékkel rendelkezik, akkor a menühöz illő Astring típusú változóba tudunk írni.
 
+(Ha túl nagynak tűnne a main function, az esetlegesen azért lehet, mert túl nagyra van véve a betűméret 🤔)
+
 ## Első futtatás előtt
 
 MacOS és Linux OS-eken a program az ncurses library-t használja. Ennélkül nem fog lefordulni a program.

@@ -10,8 +10,13 @@
 #elif defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
 #include <conio.h>
 #include <io.h>
+#include <windows.h>
 #define F_OK 0
 #define access _access
+#define KEY_UP 72
+#define KEY_DOWN 80
+#define KEY_BACKSPACE 8
+#define KEY_DC 127
 #endif
 
 #include "debugmalloc.h"
@@ -315,6 +320,10 @@ void print_header() {
 int main() {
 #if defined(__APPLE__) || defined(__linux__)
     init_ncurses();
+#elif defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+    SetConsoleOutputCP(CP_UTF8);
+    SetConsoleCP(CP_UTF8);
+    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 #endif
 
     // Menu setup
@@ -392,9 +401,15 @@ int main() {
             mvprintw(i + headerSize, 0, "%s", current_menu->items[i].text);
             if (i == selected) attroff(A_REVERSE);
 #elif defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
-            if (i == selected) _textbackground(WHITE);
+            if (i == selected)
+                SetConsoleTextAttribute(hConsole, BACKGROUND_GREEN |
+                                                      BACKGROUND_BLUE |
+                                                      BACKGROUND_RED);
             printf("%s\n", current_menu->items[i].text);
-            if (i == selected) _textbackground(BLACK);
+            if (i == selected)
+                SetConsoleTextAttribute(hConsole, FOREGROUND_GREEN |
+                                                      FOREGROUND_BLUE |
+                                                      FOREGROUND_RED);
 #endif
         }
         if (current_menu->parent != NULL) {
@@ -416,9 +431,15 @@ int main() {
             if (back_index == selected) attroff(A_REVERSE);
 
 #elif defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
-            if (back_index == selected) _textbackground(WHITE);
+            if (back_index == selected)
+                SetConsoleTextAttribute(hConsole, BACKGROUND_GREEN |
+                                                      BACKGROUND_BLUE |
+                                                      BACKGROUND_RED);
             if (current_menu->type != IDOPONT_SELECTOR) printf("<- Vissza\n");
-            if (back_index == selected) _textbackground(BLACK);
+            if (back_index == selected)
+                SetConsoleTextAttribute(hConsole, FOREGROUND_GREEN |
+                                                      FOREGROUND_BLUE |
+                                                      FOREGROUND_RED);
 
 #endif
 
@@ -428,9 +449,15 @@ int main() {
             mvprintw(current_menu->size + headerSize, 0, "Kilépés");
             if (current_menu->size == selected) attroff(A_REVERSE);
 #elif defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
-            if (current_menu->size == selected) _textbackground(WHITE);
+            if (current_menu->size == selected)
+                SetConsoleTextAttribute(hConsole, FOREGROUND_GREEN |
+                                                      FOREGROUND_BLUE |
+                                                      FOREGROUND_RED);
             printf("Kilépés\n");
-            if (current_menu->size == selected) _textbackground(BLACK);
+            if (current_menu->size == selected)
+                SetConsoleTextAttribute(hConsole, FOREGROUND_GREEN |
+                                                      FOREGROUND_BLUE |
+                                                      FOREGROUND_RED);
 #endif
         }
         if (current_menu->accepts_input) {
@@ -756,7 +783,11 @@ int main() {
                 }
             }
         }
+#if defined(__APPLE__) || defined(__linux__)
         clear();
+#elif defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+        system("cls");
+#endif
     }
 #if defined(__APPLE__) || defined(__linux__)
     endwin();

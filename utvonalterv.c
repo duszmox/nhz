@@ -10,6 +10,38 @@
 #include "debugmalloc.h"
 #include "idopontok.h"
 
+// Mivel az strcasestr() függvény nem elérhető minden string.h-ban, ezért
+// sajátot kellett írjak Forrás:
+// https://stackoverflow.com/questions/42354008/strcasestr-still-not-working
+// az fentebb említett forrás nem műkötött, de innen dolgoztam tovább:
+char *my_strcasestr(const char *haystack, const char *needle) {
+    if (*needle == '\0') {
+        return (char *)haystack;
+    }
+    while (*haystack != '\0') {
+        while (tolower((unsigned char)*haystack) !=
+               tolower((unsigned char)*needle)) {
+            if (*haystack == '\0') {
+                return NULL;
+            }
+            haystack++;
+        }
+        const char *h = haystack;
+        const char *n = needle;
+        while (tolower((unsigned char)*h) == tolower((unsigned char)*n) &&
+               *n != '\0') {
+            h++;
+            n++;
+        }
+        if (*n == '\0') {
+            return (char *)haystack;
+        }
+        haystack++;
+    }
+
+    return NULL;
+}
+
 struct Metro *menetrend_beolvas() {
     FILE *fp = fopen("menetrend.csv", "r");
     if (fp == NULL) {
@@ -206,7 +238,7 @@ struct MegalloList *megallo_search(Metro *metro, char *megallo_chunk) {
                 }
             }
 
-            if (strcasestr(mozgo->nev, megallo_chunk) != NULL ||
+            if (my_strcasestr(mozgo->nev, megallo_chunk) != NULL ||
                 strcmp(megallo_chunk, "") == 0) {
                 Megallo *uj = malloc(sizeof(Megallo));
                 *uj = (Megallo){NULL, NULL, NULL, NULL, NULL, 0, 0};
