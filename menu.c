@@ -15,7 +15,7 @@
 #endif
 
 #include "debugmalloc.h"
-#include "megallok.h"
+#include "menetrend.h"
 #include "metroGraph.h"
 #include "utvonalterv.h"
 

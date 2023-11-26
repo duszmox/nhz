@@ -47,7 +47,6 @@ typedef struct Utvonalterv {
 } Utvonalterv;
 
 Metro *menetrend_beolvas();
-bool is_on_vonal(Vonal *vonal, char *megallo);
 int *megallo_distance(Vonal *vonal, char *megallo1, char *megallo2);
 MegalloList *megallo_search(Metro *metro, char *megallo_chunk);
 Vonal *find_vonal_for_megallo(Metro *metro, Megallo *megallo);
@@ -55,7 +54,6 @@ void sort_megallo_array(Megallo *megallok);
 int count_megallok(Megallo *megallok);
 Vonal *find_vonal_for_megallo_string(Metro *metro, char *megalloNev);
 AtszallasiMegallo *atszallasi_megallok_on_vonal(Metro *Metro, Vonal *vonal);
-int count_utvonal_distance(Metro *metro, Utvonalterv *utvonalterv);
 struct Vonal *are_megallok_on_same_vonal_string(Metro *metro, char *megallo1,
                                                 char *megallo2);
 void free_megallo_list(MegalloList *megalloList);

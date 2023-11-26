@@ -1,4 +1,4 @@
-#include "megallok.h"
+#include "menetrend.h"
 
 #include <stdio.h>
 #include <stdlib.h>

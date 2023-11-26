@@ -1,5 +1,5 @@
-#ifndef MEGALLOK_H
-#define MEGALLOK_H
+#ifndef MENETREND_H
+#define MENETREND_H
 typedef struct MegalloGen {
     char *nev;
     struct MegalloGen *kovetkezo;
@@ -18,8 +18,6 @@ typedef struct MetroGen {
     int vonalakSzama;
 } MetroGen;
 MetroGen *vonalak_beolvas();
-MegalloGen *elso_megallo(VonalGen vonal);
-MegalloGen *utolso_megallo(VonalGen vonal);
 void gen_menetrend(MetroGen metro);
 void free_metro(MetroGen *metro);
 void del_menetrend();
