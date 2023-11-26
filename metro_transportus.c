@@ -65,6 +65,7 @@ void gen_m() {
     gen_menetrend(*metro);
     free_metro(metro);
 }
+#if defined(__APPLE__) || defined(__linux__)
 void init_ncurses() {
     setlocale(LC_ALL, "");
     initscr();
@@ -73,8 +74,9 @@ void init_ncurses() {
     noecho();
     curs_set(0);
 }
+#endif
 
-Menu *gen_utvonalmenu(Utvonalterv *utvonalterv, Menu *parent) {
+struct Menu *gen_utvonalmenu(Utvonalterv *utvonalterv, Menu *parent) {
     Menu *utvonalterv_menu = malloc(sizeof(Menu));
     utvonalterv_menu->items = malloc(sizeof(MenuItem) * 4);
     utvonalterv_menu->parent = parent;
@@ -168,13 +170,11 @@ void add_char_to_astring(AString *astring, char ch) {
 
 void remove_last_char_from_string(AString *astring) {
     if (astring->size > 0) {
-        // Find the start of the last character (assuming UTF-8)
         int i = astring->size - 1;
         while (i > 0 && (astring->key[i] & 0xC0) == 0x80) {
             --i;
         }
 
-        // Resize the string
         astring->key = realloc(astring->key, sizeof(char) * i + 1);
         astring->key[i] = '\0';
         astring->size = i;
@@ -187,7 +187,8 @@ void clear_astring(AString *astring) {
     astring->size = 0;
 }
 
-Menu *utvonalterv_visualizer_menu(Utvonalterv *utvonalterv, Menu *parent) {
+struct Menu *utvonalterv_visualizer_menu(Utvonalterv *utvonalterv,
+                                         Menu *parent) {
     Menu *menu = malloc(sizeof(Menu));
     menu->type = UTVONALTERV_VISUALIZER;
     menu->parent = parent;
@@ -312,7 +313,9 @@ void print_header() {
 }
 
 int main() {
+#if defined(__APPLE__) || defined(__linux__)
     init_ncurses();
+#endif
 
     // Menu setup
     Menu *current_menu;
@@ -590,15 +593,21 @@ int main() {
                     }
 
                 } else if (current_menu->type == MENETREND_MENU1) {
-                    if (selected == 0) gen_m();
+                    if (selected == 0) {
+                        if (access("megallok.csv", F_OK) == 0) {
+                            gen_m();
+                        }
+                    };
                 } else if (current_menu->type == MENETREND_MENU2) {
                     if (selected == 0) {
                         remove("menetrend.csv");
                         if (metro != NULL) free_metro_network(metro);
                         metro = NULL;
                     }
-                    if (selected == 1) gen_m();
-
+                    if (selected == 1)
+                        if (access("megallok.csv", F_OK) == 0) {
+                            gen_m();
+                        }
                 } else if (current_menu->type == UTVALTERV_MENU) {
                     if (selected == 0 || selected == 1) {
                         clear_astring(&searchKey);
@@ -747,8 +756,9 @@ int main() {
         }
         clear();
     }
-
+#if defined(__APPLE__) || defined(__linux__)
     endwin();
+#endif
 
     return 0;
 }

@@ -308,7 +308,7 @@ A megállók tárolására létrehoz egy `MegalloList` típusú változót és a
 struct Megallo *is_string_on_megallo_vonal(Megallo *megallo, char *megalloNev)
 ```
 
-Paraméterként kap egy megállót objektumot és egy másik megálló nevét string-ként. Végigmegy a Megallo objektum láncolt listáján és ha megtalálja a megalloNev névvel rendelkező Megallo-t, akkor visszatérési értékként adja annak a Megallo-nak a memóriacímét. Ha nincs ilyen megálló, akkor NULL pointerrel tér vissza.
+Paraméterként kap egy megállót objektumot és egy másik megálló nevét string-ként. Végigmegy a Megallo objektum láncolt listáján és ha megtalálja a megalloNev névvel rendelkező Megallo-t, akkor visszatérési értékként adja annak a Megallo-nak a memóriacímét. Ha nincs ilyen megálló, akkor `NULL` pointerrel tér vissza.
 
 ---
 
@@ -316,7 +316,7 @@ Paraméterként kap egy megállót objektumot és egy másik megálló nevét st
 int *megallo_distance(Vonal *vonal, char *megallo1, char *megallo2)
 ```
 
-Paraméterként kapott Vonalon megnézi, hogy szerepel-e a további két paraméteren kapott string-gel rendelkező megálló, ha létezik, akkor egy egész számban eltárolja a távolságuk. *(Ha megallo1 előbb van a vonalon mint megallo2, akkor a távolság pozitív, ellenkező esetben negatív. Ha mindkét megálló ugyanaz, akkor a táv 0)*. Ha mindketten rajta vannak a vonalon akkor a távolság egészre mutató pointerrel tér vissza a függvény, egyéb esetben egy NULL pointer a return value.
+Paraméterként kapott Vonalon megnézi, hogy szerepel-e a további két paraméteren kapott string-gel rendelkező megálló, ha létezik, akkor egy egész számban eltárolja a távolságuk. *(Ha megallo1 előbb van a vonalon mint megallo2, akkor a távolság pozitív, ellenkező esetben negatív. Ha mindkét megálló ugyanaz, akkor a táv 0)*. Ha mindketten rajta vannak a vonalon akkor a távolság egészre mutató pointerrel tér vissza a függvény, egyéb esetben egy `NULL` pointer a return value.
 
 ---
 
@@ -358,7 +358,7 @@ struct Vonal *are_megallok_on_same_vonal_string(Metro *metro,
                                                 const char *megallo2)
 ```
 
-Paraméterként kapott kettő megálló neve alapján megnézi, hogy van-e olyan vonal a metróhálózaton, ahol mindeketten rajta vannak. Ha van, akkor visszaadja annak pointerét, ha nem, akkor pedig egy NULL pointerrel tér vissza.
+Paraméterként kapott kettő megálló neve alapján megnézi, hogy van-e olyan vonal a metróhálózaton, ahol mindeketten rajta vannak. Ha van, akkor visszaadja annak pointerét, ha nem, akkor pedig egy `NULL` pointerrel tér vissza.
 
 ---
 
@@ -366,7 +366,7 @@ Paraméterként kapott kettő megálló neve alapján megnézi, hogy van-e olyan
 struct Megallo *find_megallo_for_string(Metro *metro, const char *megalloNev)
 ```
 
-Paraméterként kapott megálló névhez keres a metróhálózaton egy Megállót, aminek ugyanaz a neve. Ha talál, annak a Megállónak a memóriacímével tér vissza, ha nem, akkor egy NULL pointerrel.
+Paraméterként kapott megálló névhez keres a metróhálózaton egy Megállót, aminek ugyanaz a neve. Ha talál, annak a Megállónak a memóriacímével tér vissza, ha nem, akkor egy `NULL` pointerrel.
 
 ---
 
@@ -409,10 +409,334 @@ void free_atszallasi_megallok(AtszallasiMegallo **atszallasiMegallok,
 
 Paraméterként kapott `AtszallasiMegallo` típusú láncolt listák listájának minden láncolt listáját és azoknak az elemeit is felszabadítja.
 
-## menu.c
+## metroGraph
 
-Jelenleg ez tartalmazza a menü-t, amin keresztül lehet interaktálni az adatokkal. Egyenlőre csak ncureses-el működik, ami windows operációs rendszeren nem elérhető library, így csak linuxon és macOS-es futtatható.
+A metróhálózat gráf alapú ábrázolását és az útvonaltervezést végzi el. Az utvonalterv file-ban definiált függvényeket használja a súlyozott gráf felépítéséhez, majd pedig dijsktra algoritmusát lefuttatva megkeresi a legrövidebb utat a kettő megálló között.
+
+### metroGraph | definiált típusok
+
+#### El
+
+```c
+struct El {
+    int celAllomas;
+    int suly;
+    struct El* kov;
+}
+```
+
+Láncolt lista. A metróhálózat gráfjának egyik éle. Tartalmazza azt, hogy az adott él melyik másik gráf pontra mutat, ennek a típusa egy egész. Azt, hogy mekkora az él súlya *(Azaz hány megálló van a két megálló között)* És mivel ez egy láncolt lista, ezért tartalmazza a következő elemre mutató pointert is.
+
+---
+
+#### AllomasVertex
+
+```c
+struct AllomasVertex {
+    int taroltMegallokSzama; // átszállási lehetőségek száma
+    struct Megallo** megallok; // megállók pointereinek tömbje
+    struct El* elek; // pontból mutató élek
+}
+```
+
+Ez egy pont a gráfon. Tartalmazza azt, hogy ezen a ponton hány megálló van, azaz hány vonalra lehet itt átszállni. *(Például a Deák Ferenc Tér esetén ez **3**)*. Tartalmazza ezeknek a megállóknak a pointereit is, egy pointer tömbben. Illetve az összes a pontból mutató Él-nek a láncolt listájának első elemére mutató pointert.
+
+---
+
+#### MetroGraph
+
+```c
+struct MetroGraph {
+    int allomasVSzam;
+    struct AllomasVertex* tomb;
+}
+```
+
+Ez a gráfnak a típusa. Tartalmazza az összes `AllomasVertex`-et egy tömbben, illetve ennek a tömbnek a méretét.
+
+### metroGraph | függvények
+
+```c
+struct MetroGraph* createGraph(int allomasVSzam)
+```
+
+Létrehoz egy MetroGraph típusú objektumot, aminek a paraméterben megadott számú pontja van. Visszatérési érteke az a MetroGraph objektumra mutató pointer.
+
+---
+
+```c
+void addEl(struct MetroGraph* graph, int src, int cel, int suly)
+```
+
+Hozzáad a paraméterként kapott gráf (graph), paraméterként kapott (src) pontjának az Él-ek láncolt listájához egy a paraméterként (cél) kapott pontba mutató paraméterként (suly) kapott súlyú Él-t.
+
+---
+
+```c
+void freeGraph(struct MetroGraph* graph)
+```
+
+Paraméterként (graph) kapott gráf-ot, annak pontjait és pontjainak az éleit felszabadítja.
+
+---
+
+```c
+int* get_allomas_vertex_by_name(struct MetroGraph* graph,
+                                const char* megalloNev)
+```
+
+Paraméterként (graph) kapott gráfon megkeresi a paraméterként (megalloNev) kapott névvel rendelkező megállónak az indexét, ha van ilyen akkor egy egészre mutató pointerrel tér vissza, ha nincs, akkor egy `NULL` pointerrel.
+
+---
+
+```c
+void resize_metro_graph(struct MetroGraph* graph)
+```
+
+Paraméterként (graph) kapott gráfot bővít plusz egy ponttal.
+
+---
+
+```c
+int* dijkstra(struct MetroGraph* graph, int source)
+```
+
+Paraméterként (graph) kapott gráfon lefuttatja dijstkra algoritmusát a paraméterként kapott (source) pontból kiindulva. Visszatérési értéke egy egész tömb, ami `graph->allomasVSzam` hosszú, és a távolságát tartalmazza minden pontnak a kezdeti ponttól. *(Forrás: <http://cs.bme.hu/bsz2/bsz2_jegyzet.pdf> 160. oldal)*
+
+---
+
+```c
+int minDistance(int* distance, bool* visited, int V)
+```
+
+A legrövidebb utat távolságot keresi meg (és azzal tér vissza), a még meg nem látogatott csúcsok között. (Ezt a függvényt a dijsktra algoritmus használja fel).
+
+---
+
+```c
+int findPrevious(int* distance, struct El* edges)
+```
+
+A paraméterként kapott ("elkészült") távolságok tömbbön halad visszafele és keresi meg az adott élhez vezető úton az előzőt.
+
+---
+
+```c
+struct Utvonalterv* dijkstra_to_utvonalterv(struct MetroGraph* graph, int* distance, int veg, int start, Idopont indulasiIdo, Metro* metro)
+```
+
+A dijsktra algoritmus által generált távolságok tömb segítségével megekersi a kiiduló (start) pontból a legrövidebb utat a cél állomáshoz (veg). Minden ponton való áthaladás egy újabb elem lesz a visszatérési értékként generált útvonaltervben. Ha nem lehet két pont közt útvonalat tervezni, akkor `NULL` pointerrel értékkel tér vissza.
+
+---
+
+```c
+struct Utvonalterv* utvonaltervezes(Metro* metro, char* indulo, char* cel, Idopont indulasiIdo)
+```
+
+Két paraméterként kapott megállónév (indulo, cel) által reprezentált megálló között keresi meg a legrövidebb útvonalat. Ehhez felépíti a metróhálózaton található átszállási megállók és az induló illetve cél állomások segítségével a metroGraph gráfot, amin lefuttatja a dijkstra algoritmusát. Az algoritmus által generált távolságok tömbből pedig útvonaltervet generál a dijkstra_to_utvonalterv függvénnyel. Ha a két megálló között nem lehet útvonalat tervezni, akkor `NULL` értékkel tér vissza, egyéb esetben egy `Útvonalterv` típusú láncolt listávál.
 
 ## metro_transportus.c
 
-Egyenlőre nincs jelentősége a file-nak, majd ez lesz a belépőpontja az app-nak
+A program belépő pontja. Ez tartalmazza a main-t, itt a menü, és innen lehet minden funkciót elérni.
+
+### metro_transportus | definiált típusok
+
+#### Menü típusai enum
+
+```c
+enum menus {
+    MAIN_MENU,
+    MENETREND_MENU1,
+    MENETREND_MENU2,
+    UTVALTERV_MENU,
+    MEGALLO_SELECTOR,
+    IDOPONT_SELECTOR,
+    UTVONALTERV_VISUALIZER
+} typedef menu_type;
+```
+
+Ez egy enum, amik közül lehet kiválasztani, hogy mi az adott menü típusa.
+
+---
+
+#### Selector típus
+
+```c
+enum selector_type { INDULO, CEL, NOT_SELECTED } typedef selector_type;
+```
+
+Ez a `MEGALLO_SELECTOR` típusú menü-re vonatkozik. Az induló és cél állomás kiválasztására ugyanazok a függvények vannak használva, egy ilyen típusú változóval lehet kiválasztani, hogy melyik változót állítsuk.
+
+---
+
+#### Menu item
+
+```c
+typedef struct MenuItem {
+    char *text;
+} MenuItem;
+```
+
+A menü egyik elemét reprezentálja.
+
+---
+
+#### Menu
+
+```c
+typedef struct Menu {
+    menu_type type; // menü típusa
+    MenuItem *items; // menü elemei
+    int selected; // melyik elem van kiválasztva
+    struct Menu *parent; // melyik menüből érkeztünk
+    int size; // hány eleme van
+    bool accepts_input; // fogad-e szöveges bemenetet
+} Menu;
+```
+
+Egy menüt reprezentál. Tárolja a típusát, ami egy előre megadott enum-ból választható ki. Tárolja az elemeit egy tömbben, annka a tömbnek a méretét. Azt is, hogy épp melyik elem van kiválasztva, illetve, hogy fogad-e szöveges bemenetet a menü.
+
+---
+
+#### Astring
+
+```c
+typedef struct AString {
+    char *key;
+    int size;
+} AString;
+```
+
+Ez a bekért szövegek tárolására alkalmas típus. Tartalmazza a szöveget, illetve annak méretét.
+
+### metro_transportus | függvények
+
+```c
+void allocate_string(char **str, char const *text)
+```
+
+Paraméterként kapott (**str) pointer-nek a szövegébe tölti bele a paraméterként kapott (text) konstant szöveget.
+
+---
+
+```c
+void increase_selected(int *selected, int size)
+```
+
+Paraméterként kapott (selected) az aktuális kiválasztott értéket növeli az aktuális menü méretéhez képest. Ha a menü méreténél nagyobbra szeretné növelni a program a kiválasztottat, akkor 0-ra visszaugrik az érték.
+
+---
+
+```c
+void decrease_selected(int *selected, int size)
+```
+
+Paraméterként kapott (selected) az aktuális kiválasztott értéket csökkent az aktuális menü méretéhez képest. Ha 0-nál kisebbre szeretné csökkenteni a program a kiválasztottat, akkor a menü méretére visszaugrik az érték.
+
+---
+
+```c
+void gen_m()
+```
+
+Legenerálja a `menetrend.csv` file-t.
+
+---
+
+```c
+void init_ncurses()
+```
+
+MacOS-en és Linux-on az ncureses library-t használja a program a getch() függvényhez, ennek a library-nak van pár függvénye amit inicializásnál le kell futattni, ezek a függvények vannak ide kiszervezve.
+
+---
+
+```c
+struct Menu *gen_utvonalmenu(Utvonalterv *utvonalterv, Menu *parent)
+```
+
+Paraméterként kapott útvonaltervhez készít egy menü objektumot, majd visszaadja annak memóriacímét.
+
+---
+
+```c
+void free_menu(Menu *menu)
+```
+
+Felaszabadítja a paraméterként kapott menü elemeinek szövegeit, illetve magát a menüt is.
+
+---
+
+```c
+void add_char_to_astring(AString *astring, char ch)
+```
+
+Paraméterként kapott (astring) Astring típusú változóhoz hozzáfűz egy paraméterként kapott (ch) karaktert.
+
+---
+
+```c
+void remove_last_char_from_string(AString *astring)
+```
+
+Paraméterként kapott (astring) Astring típusú változónak törli az utolsó karakterét.
+
+---
+
+```c
+void clear_astring(AString *astring)
+```
+
+Paraméterként kapott (astring) Astring típusú változóban tárolt értéket egyenlővé teszi egy üres string-gel.
+
+---
+
+```c
+struct Menu *utvonalterv_visualizer_menu(Utvonalterv *utvonalterv, Menu *parent) 
+```
+
+Paraméterként kapott útvonaltervet vizualizál és egy Menu típusú változóra mutató pointerként viszaadja. *(Fontos megjegyezni, hogy amikor ezt a menüt a program megjeleníti a fel le gombok nem működnek, csak a vissza gomb kattintható)*
+
+---
+
+```c
+void print_header()
+```
+
+Platformhoz megfelelő módon megjeleníti a kijelzőn a Metro Transportus ASCII art-ot
+
+---
+
+#### main()
+
+A program az aktuális menüt egy `current_menu` nevű Menu pointerben tárolja.  
+A statikus menük a main elején inicializálódnak. A kezdő menü a mainMenu lesz.
+
+A program egy while(true) örök loop-ban fut, egészen addig amíg a kilépés gombot nem választja a felhasználó.  
+A getch() függvény segítségével bekér egy karaktert a felhasználótól. Ha ez a karakter a fel, vagy a le, akkor a hozzá illő increase-/decrease_selected függvényt meghívja, ezzel változtatva a kiválasztott menüpontot.  
+Az egyes menüpontok mögött rejlő function mindig a menü típusától függ. Ha a kiválasztott menüpont száma megegyezik a menü méretével, akkor mindig a vissza/kilépés funkció fog lefutni.  
+Ha olyan menüben vagyunk ahol az `accepts_input` igaz értékkel rendelkezik, akkor a menühöz illő Astring típusú változóba tudunk írni.
+
+## Első futtatás előtt
+
+MacOS és Linux OS-eken a program az ncurses library-t használja. Ennélkül nem fog lefordulni a program.
+
+MacOS-en az alábbi paranccsal telepíthető *(a brew package manager szükséges a parancs futtatásáshoz)*:
+
+```sh
+brew install ncurses
+```
+
+Ubuntu/Debian distro-kon ez a parancs:
+
+```sh
+sudo apt-get install libncurses5-dev libncursesw5-dev
+```
+
+Egyéb distribúciók esetén az alábbi cikket ajánlom segítségként: <https://www.cyberciti.biz/faq/linux-install-ncurses-library-headers-on-debian-ubuntu-centos-fedora/>
+
+**Ezenkívül a compile parancs futtatásakor hozzá kell adni a parancshoz a `-lncursesw` tag-et, ennélkül nem fog rendesen működni a program.**
+
+Megeshet még, hogy a fordító nem találja a header file-okat a telepítés után sem, ekko a `-L` és `-I` tag-eket is hozzá kell fűzni az ncurses elérési útjával együtt. Például: `-L/opt/homebrew/opt/ncurses/lib -I/opt/homebrew/opt/ncurses/include`
+
+*A program csak MacOS-en lett tesztelve, ezért előfordulhatnak előre nem látott grafikai problémák egy Windows-os, vagy Linuxos futtatás esetén.*

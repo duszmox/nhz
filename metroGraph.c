@@ -15,14 +15,14 @@
 int* dijkstra(struct MetroGraph* graph, int source);
 int minDistance(int* distance, bool* visited, int V);
 
-struct MetroGraph* createGraph(int numVertices) {
+struct MetroGraph* createGraph(int allomasVSzam) {
     struct MetroGraph* graph =
         (struct MetroGraph*)malloc(sizeof(struct MetroGraph));
-    graph->allomasVSzam = numVertices;
-    graph->tomb = (struct AllomasVertex*)malloc(numVertices *
+    graph->allomasVSzam = allomasVSzam;
+    graph->tomb = (struct AllomasVertex*)malloc(allomasVSzam *
                                                 sizeof(struct AllomasVertex));
 
-    for (int i = 0; i < numVertices; ++i) {
+    for (int i = 0; i < allomasVSzam; ++i) {
         graph->tomb[i].megallok = (struct Megallo**)malloc(sizeof(Megallo));
         graph->tomb[i].elek = NULL;
     }
@@ -30,10 +30,10 @@ struct MetroGraph* createGraph(int numVertices) {
     return graph;
 }
 
-void addEdge(struct MetroGraph* graph, int src, int dest, int weight) {
+void addEl(struct MetroGraph* graph, int src, int cel, int suly) {
     struct El* ujEl = (struct El*)malloc(sizeof(struct El));
-    ujEl->celAllomas = dest;
-    ujEl->suly = weight;
+    ujEl->celAllomas = cel;
+    ujEl->suly = suly;
     ujEl->kov = graph->tomb[src].elek;
     graph->tomb[src].elek = ujEl;
 }
@@ -51,10 +51,11 @@ void freeGraph(struct MetroGraph* graph) {
     free(graph->tomb);
     free(graph);
 }
-int* get_allomas_vertex_by_name(struct MetroGraph* graph, char* name) {
+int* get_allomas_vertex_by_name(struct MetroGraph* graph,
+                                const char* megalloNev) {
     for (int i = 0; i < graph->allomasVSzam; i++) {
         for (int j = 0; j < graph->tomb[i].taroltMegallokSzama; j++) {
-            if (strcmp(graph->tomb[i].megallok[j]->nev, name) == 0) {
+            if (strcmp(graph->tomb[i].megallok[j]->nev, megalloNev) == 0) {
                 int* index = (int*)malloc(sizeof(int));
                 *index = i;
                 return index;
@@ -74,6 +75,8 @@ void resize_metro_graph(struct MetroGraph* graph) {
     graph->tomb[graph->allomasVSzam - 1].elek = NULL;
     graph->tomb[graph->allomasVSzam - 1].taroltMegallokSzama = 0;
 }
+
+// Forrás: http://cs.bme.hu/bsz2/bsz2_jegyzet.pdf 160. oldal
 int* dijkstra(struct MetroGraph* graph, int source) {
     int* distance = (int*)malloc(graph->allomasVSzam * sizeof(int));
     bool* visited = (bool*)malloc(graph->allomasVSzam * sizeof(bool));
@@ -352,7 +355,7 @@ struct Utvonalterv* utvonaltervezes(Metro* metro, char* indulo, char* cel,
             if (kozosVonal != NULL) {
                 int* megalloTav =
                     megallo_distance(kozosVonal, induloVonalNev, celVonalNev);
-                addEdge(metroGraph, i, j, abs(*megalloTav));
+                addEl(metroGraph, i, j, abs(*megalloTav));
                 free(megalloTav);
             }
         }
